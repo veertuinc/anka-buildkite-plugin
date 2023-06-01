@@ -66,7 +66,7 @@ teardown() {
 
   stub anka \
     "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_MISSING}'" \
-    "cp -a . 10.14-UUID:/private/var/tmp/ankafs.0 : " \
+    "cp -a . 10.14-UUID:/workdir : " \
     "run --workdir /workdir 10.14-UUID bash -c 'command \"a string\"' : echo 'ran command in anka'"
 
   run $PWD/hooks/command
