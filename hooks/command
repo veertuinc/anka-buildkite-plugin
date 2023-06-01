@@ -18,7 +18,7 @@ if [[ $(plugin_read_config NO_VOLUME false) == false ]]; then
     echo "Veertu FUSE driver detected. Will mount volume into ${job_image_name}."
   else
     echo "Veertu FUSE driver NOT detected."
-    echo "Copying repo files from $(plugin_read_config VOLUME .) to ${job_image_name}. (This may take awhile depending on the size of your volume)"
+    echo "Copying repo files from $(plugin_read_config VOLUME .) to ${job_image_name}. (This may take awhile depending on the size)"
     plugin_prompt_and_run anka $ANKA_DEBUG cp -a "$(plugin_read_config VOLUME .)" "${job_image_name}:$(plugin_read_config WORKDIR /private/var/tmp/ankafs.0)"
   fi
 
