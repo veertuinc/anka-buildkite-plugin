@@ -1,11 +1,11 @@
 version: '3.4'
 services:
   tests:
-    image: buildkite/plugin-tester
+    image: buildkite/plugin-tester:v4.0.0
     volumes:
       - ".:/plugin"
   lint:
     image: buildkite/plugin-linter
-    command: ['--id', 'chef/anka']
+    command: ['--id', 'veertuinc/anka']
     volumes:
       - ".:/plugin:ro"

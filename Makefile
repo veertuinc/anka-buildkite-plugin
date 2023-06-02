@@ -1,5 +1,5 @@
 lint:
-	docker run -it --rm -v "$(PWD):/plugin" buildkite/plugin-linter --id chef/anka
+	docker run -it --rm -v "$(PWD):/plugin" buildkite/plugin-linter --id veertuinc/anka
 
 bats:
 	docker-compose run tests

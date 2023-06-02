@@ -1,6 +1,6 @@
 # Anka Buildkite Plugin
 
-A [Buildkite plugin](https://buildkite.com/docs/agent/v3/plugins) for running pipeline steps in [Anka](https://ankadocs.veertu.com/docs/what-is-anka/) virtual machines.
+A [Buildkite plugin](https://buildkite.com/docs/agent/v3/plugins) for running pipeline steps in [Anka](https://docs.veertu.com/anka/what-is-anka/) virtual machines.
 
 - You need to ensure your Anka Nodes (host machines running Anka software) have the Buildkite agent installed and show under your Agents listing inside of Buildkite.
 - The plugin will create a cloned VM to run instructions in and will delete the VM on pipeline status `cancellation`, `failure`, or `success`.
@@ -10,7 +10,7 @@ A [Buildkite plugin](https://buildkite.com/docs/agent/v3/plugins) for running pi
 
 > We recommend using Anka Build 2.3 or greater with this plugin, especially if you have Big Sur VMs.
 
-## Anka VM Template & Tag Requirements
+## Anka VM [Template & Tag](https://docs.veertu.com/anka/anka-virtualization-cli/getting-started/creating-vms/#vm-clones) Requirements
 
 1. In the VM, make sure remote login is enabled (`System Preferences > Sharing`).
 
@@ -21,7 +21,7 @@ steps:
   - command: make test
     agents: "queue=mac-anka-large-node-fleet"
     plugins:
-      - chef/anka#v0.7.0:
+      - veertuinc/anka#v0.8.0:
           vm-name: macos-base-10.14
 ```
 
@@ -84,7 +84,9 @@ Set this to `true` if you do not wish to mount the current directory into the An
 Example: `true`
 
 > [Veertu Inc](https://veertu.com) (creators of Anka) state that the performance of using shared/mounted folders is not optimized. If you disable this, you need to be aware that the `git clone` of your repo will no longer be available inside of the VM.
+
 You can simply clone it as your first step:
+
 ```yml
 steps:
   - commands:
@@ -92,15 +94,21 @@ steps:
      - cd repo-folder; ./build.sh
     plugins:
       - thedyrt/skip-checkout#v0.1.1: ~
-      - chef/anka#v0.7.0:
+      - veertuinc/anka#v0.8.0:
          vm-name: base-vm-mojave
          no-volume: true
          wait-network: true
 ```
 
+### `workdir` (optional)
+
+The fully-qualified path of the working directory inside the Anka VM. Defaults to `/private/var/tmp/ankafs.0` unless `no-volume` is set to true.
+
+Example: `/some/directory`
+
 ### `volume` (optional)
 
-The path to a directory on your Buildkite host you wish to mount into the Anka VM. Defaults to the current working directory. Mounted volume will be available within the VM at `/private/var/tmp/ankafs.0`.
+The path to a directory on your host machine (where buildkite runs) you wish to copy into the Anka VM. Destination defaults to the current `workdir` (by default, `/private/var/tmp/ankafs.0`).
 
 Example: `/some/directory`
 
@@ -115,12 +123,6 @@ Example: `true`
 Set this to `true` if you wish to delay the execution of your `command` until sntp has been updated in the Anka VM.
 
 Example: `true`
-
-### `workdir` (optional)
-
-The fully-qualified path of the working directory inside the Anka VM. Defaults to `/private/var/tmp/ankafs.0` unless `no-volume` is set to true.
-
-Example: `/some/directory`
 
 ### `workdir-create` (optional)
 
@@ -164,7 +166,7 @@ steps:
   - command: make test
     agents: "queue=mac-anka-large-node-fleet"
     plugins:
-      - chef/anka#v0.7.0:
+      - veertuinc/anka#v0.8.0:
           vm-name: macos-base-10.14
           pre-commands:
             - 'echo 123 && echo 456'
@@ -187,7 +189,7 @@ steps:
   - command: make test
     agents: "queue=mac-anka-large-node-fleet"
     plugins:
-      - chef/anka#v0.7.0:
+      - veertuinc/anka#v0.8.0:
           vm-name: macos-base-10.14
           failover-registries:
             - 'registry_1'
@@ -247,7 +249,7 @@ Example: `341835776`
 | **Copyright:**       | Copyright 2018, Chef Software, Inc.
 | **License:**         | Apache License, Version 2.0
 
-```
+```text
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
