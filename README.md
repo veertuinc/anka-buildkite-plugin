@@ -108,7 +108,7 @@ Example: `/some/directory`
 
 ### `volume` (optional)
 
-The path to a directory on your Buildkite host you wish to copy into the Anka VM. Defaults to the current `workdir` (by default, `/private/var/tmp/ankafs.0`).
+The path to a directory on your host machine (where buildkite runs) you wish to copy into the Anka VM. Destination defaults to the current `workdir` (by default, `/private/var/tmp/ankafs.0`).
 
 Example: `/some/directory`
 
