@@ -178,6 +178,8 @@ steps:
 
 Commands to run on the HOST machine AFTER any guest/anka run commands. Useful if you need to upload artifacts created in the build/test process. This can destroy your host. Be very careful what you do with it.
 
+Hint: Cloned VM names become `${vm_name}-${BUILDKITE_JOB_ID}`, so use that in the `post-commands` to target the proper VM to copy files out of.
+
 Example: A YAML list, similar to pre-commands.
 
 ### `failover-registries` (optional)
