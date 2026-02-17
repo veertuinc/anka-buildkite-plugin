@@ -1,11 +1,15 @@
 # `anka-buildkite-plugin` Changelog
 
-<!-- latest_release 0.7.0 -->
+<!-- latest_release 1.0.0 -->
+## [v1.0.0](https://github.com/chef/anka-buildkite-plugin/tree/v1.0.0) (2026-02-17)
+
+Modernization of the plugin to use Buildkite's new plugin tester and linter. Fixed a few tests and made a few small changes to the code.
+<!-- latest_release -->
+
 ## [v0.7.0](https://github.com/chef/anka-buildkite-plugin/tree/v0.7.0) (2020-11-25)
 
 #### Merged Pull Requests
 - Add support for Anka Build 2.3 and Big Sur [#35](https://github.com/chef/anka-buildkite-plugin/pull/35) ([tduffield](https://github.com/tduffield))
-<!-- latest_release -->
 
 ## [v0.6.1](https://github.com/chef/anka-buildkite-plugin/tree/v0.6.1) (2020-05-12)
 
