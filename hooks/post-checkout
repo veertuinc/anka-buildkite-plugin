@@ -24,21 +24,21 @@ if [[ -n "${BUILDKITE_PLUGIN_ANKA_MODIFY_CPU}" ]] || [[ -n "${BUILDKITE_PLUGIN_A
   FORCED=${FORCED:-false} # Used for bats triggering of ops
   stop_ops=()
   # shellcheck disable=SC2086
-  ( $FORCED || [[ -n "$(anka list $job_image_name \| grep suspended)" ]] ) && stop_ops+=("--force")
+  ( $FORCED || anka list "$job_image_name" 2>/dev/null | grep -q "suspended" ) && stop_ops+=("--force")
   # shellcheck disable=SC2086
   plugin_prompt_and_run anka stop "${stop_ops[@]:+${stop_ops[@]}}" "$job_image_name"
 fi
 
 acceptable_pattern='^[0-9]+$'
 if [[ -n "${BUILDKITE_PLUGIN_ANKA_MODIFY_CPU}" ]]; then
-  [[ ! $BUILDKITE_PLUGIN_ANKA_MODIFY_CPU =~ $acceptable_pattern ]] && echo "Acceptable input: [0-9]+" && exit 1
+  [[ ! "$BUILDKITE_PLUGIN_ANKA_MODIFY_CPU" =~ $acceptable_pattern ]] && echo "Acceptable input: [0-9]+" && exit 1
   echo "--- :anka: Modifying CPU cores to ${BUILDKITE_PLUGIN_ANKA_MODIFY_CPU}"
   # shellcheck disable=SC2086
   plugin_prompt_and_run anka modify $job_image_name set cpu $BUILDKITE_PLUGIN_ANKA_MODIFY_CPU
 fi
 
 if [[ -n "${BUILDKITE_PLUGIN_ANKA_MODIFY_RAM}" ]]; then
-  [[ ! $BUILDKITE_PLUGIN_ANKA_MODIFY_RAM =~ $acceptable_pattern ]] && echo "Acceptable input: [0-9]+" && exit 1
+  [[ ! "$BUILDKITE_PLUGIN_ANKA_MODIFY_RAM" =~ $acceptable_pattern ]] && echo "Acceptable input: [0-9]+" && exit 1
   echo "--- :anka: Modifying RAM to ${BUILDKITE_PLUGIN_ANKA_MODIFY_RAM}G"
   # shellcheck disable=SC2086
   plugin_prompt_and_run anka modify $job_image_name set ram ${BUILDKITE_PLUGIN_ANKA_MODIFY_RAM}G
@@ -46,7 +46,7 @@ fi
 
 acceptable_mac_pattern='^([a-fA-F0-9]{2}:){5}[a-fA-F0-9]{2}$'
 if [[ -n "${BUILDKITE_PLUGIN_ANKA_MODIFY_MAC}" ]]; then
-  [[ ! $BUILDKITE_PLUGIN_ANKA_MODIFY_MAC =~ $acceptable_mac_pattern ]] && echo "Acceptable input: $acceptable_mac_pattern" && exit 1
+  [[ ! "$BUILDKITE_PLUGIN_ANKA_MODIFY_MAC" =~ $acceptable_mac_pattern ]] && echo "Acceptable input: $acceptable_mac_pattern" && exit 1
   echo "--- :anka: Modifying MAC to ${BUILDKITE_PLUGIN_ANKA_MODIFY_MAC}"
   # shellcheck disable=SC2086
   plugin_prompt_and_run anka modify $job_image_name set network-card --mac ${BUILDKITE_PLUGIN_ANKA_MODIFY_MAC}

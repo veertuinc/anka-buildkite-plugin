@@ -49,19 +49,19 @@ function in_array() {
 function lock_file() {
   [[ -z "${1}" ]] && echo "lock_file function requires a single argument" && exit 1
   LOCK_FILE="/tmp/anka-buildkite-plugin-lock"
-  if [[ $1 == "enable" ]]; then
+  if [[ "$1" == "enable" ]]; then
     # Check if lock file already exists and prevent doing anything until it's deleted by the job which created it
-    if [[ -f $LOCK_FILE ]]; then
-      echo "Lock file found on host: Waiting for existing job ($(tail -1 $LOCK_FILE)) to remove lock file..."
-      while [[ -f $LOCK_FILE ]]; do
+    if [[ -f "$LOCK_FILE" ]]; then
+      echo "Lock file found on host: Waiting for existing job ($(tail -1 "$LOCK_FILE")) to remove lock file..."
+      while [[ -f "$LOCK_FILE" ]]; do
         sleep 5
       done
     fi
-    plugin_prompt_and_run echo $BUILDKITE_BUILD_URL > $LOCK_FILE
+    plugin_prompt_and_run echo "$BUILDKITE_BUILD_URL" > "$LOCK_FILE"
     echo "[Created ${LOCK_FILE}]"
-  elif [[ $1 == "disable" ]]; then
-    if [[ -f $LOCK_FILE ]]; then # Prevent echo and cleanup on pre-exit if it's not needed
-      plugin_prompt_and_run rm -f $LOCK_FILE
+  elif [[ "$1" == "disable" ]]; then
+    if [[ -f "$LOCK_FILE" ]]; then # Prevent echo and cleanup on pre-exit if it's not needed
+      plugin_prompt_and_run rm -f "$LOCK_FILE"
       echo "[Deleted ${LOCK_FILE}]"
     fi
   else
@@ -73,18 +73,18 @@ function lock_file() {
 ##############
 # Anka --debug
 export BUILDKITE_PLUGIN_ANKA_ANKA_DEBUG=$(plugin_read_config ANKA_DEBUG false)
-$BUILDKITE_PLUGIN_ANKA_ANKA_DEBUG && export ANKA_DEBUG="--debug" || export ANKA_DEBUG=
+"$BUILDKITE_PLUGIN_ANKA_ANKA_DEBUG" && export ANKA_DEBUG="--debug" || export ANKA_DEBUG=
 
 ########################################################
 # Sleep (useful for networking related issues in the VM)
 export BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_SLEEP=$(plugin_read_config PRE_EXECUTE_SLEEP false)
-[[ $BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_SLEEP != false ]] && export PRE_EXECUTE_SLEEP="sleep $BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_SLEEP; " || export PRE_EXECUTE_SLEEP=
+[[ "$BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_SLEEP" != "false" ]] && export PRE_EXECUTE_SLEEP="sleep $BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_SLEEP; " || export PRE_EXECUTE_SLEEP=
 
 ########################################################
 # while-Sleep (useful for networking init issues; similar to the PRE_EXECUTE_SLEEP)
 export BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_PING_SLEEP=$(plugin_read_config PRE_EXECUTE_PING_SLEEP)
 export PRE_EXECUTE_PING_SLEEP=
-[[ ! -z $BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_PING_SLEEP ]] && export PRE_EXECUTE_PING_SLEEP="while ! ping -c1 $BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_PING_SLEEP | grep -v '\---'; do sleep 1; done;"
+[[ -n "$BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_PING_SLEEP" ]] && export PRE_EXECUTE_PING_SLEEP="while ! ping -c1 $BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_PING_SLEEP | grep -v '\---'; do sleep 1; done;"
 
 ###################
 # Registry Failover
@@ -95,9 +95,9 @@ if [[ -n "${BUILDKITE_PLUGIN_ANKA_FAILOVER_REGISTRIES}" ]]; then
     # Remove the default (which should be down)
     DEFAULT_REGISTRY=$(anka registry list-repos -d | grep id | cut -d' ' -f8)
     for registry in $BUILDKITE_PLUGIN_ANKA_FAILOVER_REGISTRIES; do # Grab the first available registry from the list
-      [[ $registry == $DEFAULT_REGISTRY ]] && continue
-      [[ ! -z $FAILOVER_REGISTRY ]] && continue
-      [[ $(anka registry -r $registry list) ]] && export FAILOVER_REGISTRY="-r $registry" || continue
+      [[ "$registry" == "$DEFAULT_REGISTRY" ]] && continue
+      [[ -n "$FAILOVER_REGISTRY" ]] && continue
+      [[ $(anka registry -r "$registry" list) ]] && export FAILOVER_REGISTRY="-r $registry" || continue
     done
   fi
 fi

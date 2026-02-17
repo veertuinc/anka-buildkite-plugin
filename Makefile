@@ -1,8 +1,14 @@
+VERSION = $(shell cat VERSION)
+
+.PHONY: lint shellcheck bats
+
+all: lint bats shellcheck
+
 lint:
-	docker run -it --rm -v "$(PWD):/plugin" buildkite/plugin-linter --id veertuinc/anka
+	docker run --rm -v "$(PWD):/plugin" buildkite/plugin-linter:v3.0.0 --id veertuinc/anka
 
 bats:
-	docker-compose run tests
+	docker compose run --rm tests
 
 shellcheck:
-	shellcheck hooks/**
+	docker run --rm -v "$(PWD):/mnt" koalaman/shellcheck:stable hooks/*

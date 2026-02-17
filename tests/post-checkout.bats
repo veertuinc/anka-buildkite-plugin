@@ -1,13 +1,15 @@
 #!/usr/bin/env bats
 
-load '/usr/local/lib/bats/load.bash'
+load "${BATS_PLUGIN_PATH}/load.bash"
 
 # Uncomment to enable stub debug output:
 # export ANKA_STUB_DEBUG=/dev/tty
 
 setup() {
   export BUILDKITE_JOB_ID="UUID"
-  export BUILDKITE_PLUGIN_ANKA_VM_NAME="10.14"
+  export BUILDKITE_PLUGIN_ANKA_VM_NAME="test"
+  VM="$BUILDKITE_PLUGIN_ANKA_VM_NAME"
+  JOB_IMAGE="${VM}-${BUILDKITE_JOB_ID}"
 }
 
 teardown() {
@@ -22,10 +24,10 @@ teardown() {
 iphone2"
 
   stub anka \
-    "clone 10.14 10.14-UUID : echo 'cloned vm'" \
-    "list 10.14-UUID | grep suspended : exit 0" \
-    "stop 10.14-UUID : echo 'stopped'" \
-    "start -d iphone1 -d iphone2 10.14-UUID : echo 'started with devices'"
+    "clone $VM $JOB_IMAGE : echo 'cloned vm'" \
+    "list $JOB_IMAGE : echo 'suspended'" \
+    "stop --force $JOB_IMAGE : echo 'stopped'" \
+    "start -d iphone1 -d iphone2 $JOB_IMAGE : echo 'started with devices'"
 
   run $PWD/hooks/post-checkout
 
@@ -43,12 +45,12 @@ iphone2"
   export BUILDKITE_PLUGIN_ANKA_MODIFY_MAC="00:1B:44:11:3A:B7"
 
   stub anka \
-    "clone 10.14 10.14-UUID : echo 'cloned vm'" \
-    "list 10.14-UUID | grep suspended : exit 0" \
-    "stop 10.14-UUID : echo 'stopped'" \
-    "modify 10.14-UUID set cpu 6 : echo 'set cpu 6'" \
-    "modify 10.14-UUID set ram 32G : echo 'set ram 32G'" \
-    "modify 10.14-UUID set network-card --mac 00:1B:44:11:3A:B7 : echo 'set network-card mac address to 00:1B:44:11:3A:B7'"
+    "clone $VM $JOB_IMAGE : echo 'cloned vm'" \
+    "list $JOB_IMAGE : echo 'suspended'" \
+    "stop --force $JOB_IMAGE : echo 'stopped'" \
+    "modify $JOB_IMAGE set cpu 6 : echo 'set cpu 6'" \
+    "modify $JOB_IMAGE set ram 32G : echo 'set ram 32G'" \
+    "modify $JOB_IMAGE set network-card --mac 00:1B:44:11:3A:B7 : echo 'set network-card mac address to 00:1B:44:11:3A:B7'"
 
   run $PWD/hooks/post-checkout
 
@@ -68,9 +70,9 @@ iphone2"
   export BUILDKITE_PLUGIN_ANKA_MODIFY_CPU="t"
 
   stub anka \
-    "clone 10.14 10.14-UUID : echo 'cloned vm'" \
-    "list 10.14-UUID | grep suspended : exit 0" \
-    "stop 10.14-UUID : echo 'stopped'"
+    "clone $VM $JOB_IMAGE : echo 'cloned vm'" \
+    "list $JOB_IMAGE : echo 'suspended'" \
+    "stop --force $JOB_IMAGE : echo 'stopped'"
 
   run $PWD/hooks/post-checkout
 
@@ -86,9 +88,9 @@ iphone2"
   export BUILDKITE_PLUGIN_ANKA_MODIFY_RAM="t"
 
   stub anka \
-    "clone 10.14 10.14-UUID : echo 'cloned vm'" \
-    "list 10.14-UUID | grep suspended : exit 0" \
-    "stop 10.14-UUID : echo 'stopped'"
+    "clone $VM $JOB_IMAGE : echo 'cloned vm'" \
+    "list $JOB_IMAGE : echo 'suspended'" \
+    "stop --force $JOB_IMAGE : echo 'stopped'"
 
   run $PWD/hooks/post-checkout
 
@@ -104,9 +106,9 @@ iphone2"
   export BUILDKITE_PLUGIN_ANKA_MODIFY_MAC="192.14"
 
   stub anka \
-    "clone 10.14 10.14-UUID : echo 'cloned vm'" \
-    "list 10.14-UUID | grep suspended : exit 0" \
-    "stop 10.14-UUID : echo 'stopped'"
+    "clone $VM $JOB_IMAGE : echo 'cloned vm'" \
+    "list $JOB_IMAGE : echo 'suspended'" \
+    "stop --force $JOB_IMAGE : echo 'stopped'"
 
   run $PWD/hooks/post-checkout
 
@@ -124,10 +126,10 @@ iphone2"
   export FORCED=true
 
   stub anka \
-    "clone 10.14 10.14-UUID : echo 'cloned vm'" \
-    "stop --force 10.14-UUID : echo 'stopped'" \
-    "modify 10.14-UUID set cpu 6 : echo 'set cpu 6'" \
-    "modify 10.14-UUID set ram 32G : echo 'set ram 32'"
+    "clone $VM $JOB_IMAGE : echo 'cloned vm'" \
+    "stop --force $JOB_IMAGE : echo 'stopped'" \
+    "modify $JOB_IMAGE set cpu 6 : echo 'set cpu 6'" \
+    "modify $JOB_IMAGE set ram 32G : echo 'set ram 32'"
 
   run $PWD/hooks/post-checkout
 

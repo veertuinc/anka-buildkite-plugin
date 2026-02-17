@@ -1,6 +1,6 @@
 name: Anka
 description: Runs your build steps in Anka virtual machines
-author: https://github.com/chef
+author: https://github.com/veertuinc
 requirements:
   - anka
 configuration:
@@ -10,7 +10,7 @@ configuration:
     vm-registry-tag:
       type: string
     vm-registry-version:
-      type: integer
+      type: string
     always-pull:
       type: string
     inherit-environment-vars:

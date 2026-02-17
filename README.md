@@ -8,11 +8,9 @@ A [Buildkite plugin](https://buildkite.com/docs/agent/v3/plugins) for running pi
 - A lock file (`/tmp/anka-buildkite-plugin-lock`) is created around pull and cloning. This prevents collision/ram state corruption when you're running two different jobs and pulling two different tags on the same anka node. The error you'd see otherwise is `state_lib/b026f71c-7675-11e9-8883-f01898ec0a5d.ank: failed to open image, error 2`
 - If we are unable to detect the FUSE driver within your VM, we will use the `anka cp` utility to copy the contents of your `volume` (or current working directory) into the VM (unless `no-volume` is `true`).
 
-> We recommend using Anka Build 2.3 or greater with this plugin, especially if you have Big Sur VMs.
-
 ## Anka VM [Template & Tag](https://docs.veertu.com/anka/anka-virtualization-cli/getting-started/creating-vms/#vm-clones) Requirements
 
-1. In the VM, make sure remote login is enabled (`System Preferences > Sharing`).
+1. In the VM, make sure remote login is enabled (`System Settings > General > Sharing`).
 
 ## Pipeline Step Definition Example
 
@@ -21,8 +19,8 @@ steps:
   - command: make test
     agents: "queue=mac-anka-large-node-fleet"
     plugins:
-      - veertuinc/anka#v0.8.0:
-          vm-name: macos-base-10.14
+      - veertuinc/anka#v1.0.0:
+          vm-name: macos-base
 ```
 
 ## Hook Steps
@@ -42,7 +40,7 @@ Hook | Description
 
 The name of the Anka VM Template to use as the base. The plugin will create a step-specific clone prior to execution.
 
-Example: `macos-base-10.14`
+Example: `macos-base`
 
 ### `vm-registry-tag` (optional)
 
@@ -95,7 +93,7 @@ steps:
     plugins:
       - thedyrt/skip-checkout#v0.1.1: ~
       - veertuinc/anka#v0.8.0:
-         vm-name: base-vm-mojave
+         vm-name: macos-base
          no-volume: true
          wait-network: true
 ```
@@ -167,7 +165,7 @@ steps:
     agents: "queue=mac-anka-large-node-fleet"
     plugins:
       - veertuinc/anka#v0.8.0:
-          vm-name: macos-base-10.14
+          vm-name: macos-base
           pre-commands:
             - 'echo 123 && echo 456'
             - 'buildkite-agent artifact download "build.tar.gz" . --step ":aws: Amazon Linux 1 Build"'
@@ -192,7 +190,7 @@ steps:
     agents: "queue=mac-anka-large-node-fleet"
     plugins:
       - veertuinc/anka#v0.8.0:
-          vm-name: macos-base-10.14
+          vm-name: macos-base
           failover-registries:
             - 'registry_1'
             - 'registry_2'
@@ -248,7 +246,7 @@ Example: `341835776`
 |                      |                                          |
 |:---------------------|:-----------------------------------------|
 | **Author:**          | Tom Duffield (<tom@chef.io>)
-| **Copyright:**       | Copyright 2018, Chef Software, Inc.
+| **Copyright:**       | Copyright 2018-2026, Chef Software, Inc.
 | **License:**         | Apache License, Version 2.0
 
 ```text

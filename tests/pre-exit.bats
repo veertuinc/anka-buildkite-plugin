@@ -1,13 +1,15 @@
 #!/usr/bin/env bats
 
-load '/usr/local/lib/bats/load.bash'
+load "${BATS_PLUGIN_PATH}/load.bash"
 
 # Uncomment to enable stub debug output:
 # export ANKA_STUB_DEBUG=/dev/tty
 
 setup() {
   export BUILDKITE_JOB_ID="UUID"
-  export BUILDKITE_PLUGIN_ANKA_VM_NAME="10.14"
+  export BUILDKITE_PLUGIN_ANKA_VM_NAME="test"
+  VM="$BUILDKITE_PLUGIN_ANKA_VM_NAME"
+  JOB_IMAGE="${VM}-${BUILDKITE_JOB_ID}"
 }
 
 teardown() {
@@ -18,7 +20,7 @@ teardown() {
 
 @test "Cleanup of lock file" {
   stub anka \
-    "delete --yes 10.14-UUID : echo 'deleted vm in anka'"
+    "delete --yes $JOB_IMAGE : echo 'deleted vm in anka'"
 
   touch /tmp/anka-buildkite-plugin-lock
 
@@ -30,7 +32,7 @@ teardown() {
 
 @test "Cleanup pre-exit runs properly (delete)" {
   stub anka \
-    "delete --yes 10.14-UUID : echo 'deleted vm in anka'"
+    "delete --yes $JOB_IMAGE : echo 'deleted vm in anka'"
 
   run $PWD/hooks/pre-exit
 
@@ -42,7 +44,7 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_CLEANUP=false
 
   stub anka \
-    "suspend 10.14-UUID : echo 'suspended vm in anka'"
+    "suspend $JOB_IMAGE : echo 'suspended vm in anka'"
 
   run $PWD/hooks/pre-exit
 

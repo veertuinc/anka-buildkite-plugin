@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load '/usr/local/lib/bats/load.bash'
+load "${BATS_PLUGIN_PATH}/load.bash"
 
 # Uncomment to enable stub debug output:
 # export BATS_MOCK_DETAIL=/dev/tty
@@ -11,8 +11,10 @@ export KEXSTAT_OUTPUT_MISSING="191    0 0xffffff7f847c1000 0x19000    0x19000   
 
 setup() {
   export BUILDKITE_JOB_ID="UUID"
-  export BUILDKITE_PLUGIN_ANKA_VM_NAME="10.14"
+  export BUILDKITE_PLUGIN_ANKA_VM_NAME="26.2"
   export BUILDKITE_COMMAND='command "a string"'
+  VM="$BUILDKITE_PLUGIN_ANKA_VM_NAME"
+  JOB_IMAGE="${VM}-${BUILDKITE_JOB_ID}"
 }
 
 teardown() {
@@ -25,8 +27,8 @@ teardown() {
 
 @test "Run BUILDKITE_COMMAND on machine with FUSE" {
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c 'command \"a string\"' : echo 'ran command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c 'command \"a string\"' : echo 'ran command in anka'"
 
   run $PWD/hooks/command
 
@@ -36,9 +38,9 @@ teardown() {
 
 @test "Run BUILDKITE_COMMAND on machine without FUSE" {
    stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_MISSING}'" \
-    "cp -a . 10.14-UUID:/private/var/tmp/ankafs.0 : " \
-    "run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c 'command \"a string\"' : echo 'ran command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_MISSING}'" \
+    "cp -a . $JOB_IMAGE:/private/var/tmp/ankafs.0 : " \
+    "run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c 'command \"a string\"' : echo 'ran command in anka'"
 
   run $PWD/hooks/command
 
@@ -50,8 +52,8 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_WORKDIR="/workdir"
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "run --workdir /workdir 10.14-UUID bash -c 'command \"a string\"' : echo 'ran command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "run --workdir /workdir $JOB_IMAGE bash -c 'command \"a string\"' : echo 'ran command in anka'"
 
   run $PWD/hooks/command
 
@@ -65,9 +67,9 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_WORKDIR="/workdir"
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_MISSING}'" \
-    "cp -a . 10.14-UUID:/workdir : " \
-    "run --workdir /workdir 10.14-UUID bash -c 'command \"a string\"' : echo 'ran command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_MISSING}'" \
+    "cp -a . $JOB_IMAGE:/workdir : " \
+    "run --workdir /workdir $JOB_IMAGE bash -c 'command \"a string\"' : echo 'ran command in anka'"
 
   run $PWD/hooks/command
 
@@ -83,9 +85,9 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_WORKDIR_CREATE=true
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "run 10.14-UUID mkdir -p /workdir : echo 'ran mkdir'" \
-    "run --workdir /workdir 10.14-UUID bash -c 'command \"a string\"' : echo 'ran command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "run $JOB_IMAGE mkdir -p /workdir : echo 'ran mkdir'" \
+    "run --workdir /workdir $JOB_IMAGE bash -c 'command \"a string\"' : echo 'ran command in anka'"
 
   run $PWD/hooks/command
 
@@ -100,8 +102,8 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_VOLUME="volume"
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "run --volume volume --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c 'command \"a string\"' : echo 'ran command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "run --volume volume --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c 'command \"a string\"' : echo 'ran command in anka'"
 
   run $PWD/hooks/command
 
@@ -115,9 +117,9 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_VOLUME="volume"
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_MISSING}'" \
-    "cp -a volume 10.14-UUID:/private/var/tmp/ankafs.0 : " \
-    "run --volume volume --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c 'command \"a string\"' : echo 'ran command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_MISSING}'" \
+    "cp -a volume $JOB_IMAGE:/private/var/tmp/ankafs.0 : " \
+    "run --volume volume --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c 'command \"a string\"' : echo 'ran command in anka'"
 
   run $PWD/hooks/command
 
@@ -131,7 +133,7 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_NO_VOLUME="true"
 
   stub anka \
-    "run --no-volume 10.14-UUID bash -c 'command \"a string\"' : echo 'ran command in anka'"
+    "run --no-volume $JOB_IMAGE bash -c 'command \"a string\"' : echo 'ran command in anka'"
 
   run $PWD/hooks/command
 
@@ -145,8 +147,8 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_INHERIT_ENVIRONMENT_VARS="true"
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "run --env --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c 'command \"a string\"' : echo 'ran command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "run --env --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c 'command \"a string\"' : echo 'ran command in anka'"
 
   run $PWD/hooks/command
 
@@ -160,8 +162,8 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_ENVIRONMENT_FILE="./env-file"
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "run --env-file ./env-file --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c 'command \"a string\"' : echo 'ran command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "run --env-file ./env-file --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c 'command \"a string\"' : echo 'ran command in anka'"
 
   run $PWD/hooks/command
 
@@ -175,8 +177,8 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_WAIT_NETWORK="true"
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "run --wait-network --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c 'command \"a string\"' : echo 'ran command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "run --wait-network --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c 'command \"a string\"' : echo 'ran command in anka'"
 
   run $PWD/hooks/command
 
@@ -190,8 +192,8 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_WAIT_TIME="true"
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "run --wait-time --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c 'command \"a string\"' : echo 'ran command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "run --wait-time --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c 'command \"a string\"' : echo 'ran command in anka'"
 
   run $PWD/hooks/command
 
@@ -209,9 +211,9 @@ teardown() {
 env"
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c \"ls -alht\" : echo 'ran ls command in anka'" \
-    "run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c \"env\" : echo 'ran env command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c \"ls -alht\" : echo 'ran ls command in anka'" \
+    "run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c \"env\" : echo 'ran env command in anka'"
 
   run $PWD/hooks/command
 
@@ -228,9 +230,9 @@ env"
   export BUILDKITE_PLUGIN_ANKA_ANKA_DEBUG=true
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "--debug run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c \"ls -alht\" : echo 'ran ls command in anka'" \
-    "--debug run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c \"env\" : echo 'ran env command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "--debug run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c \"ls -alht\" : echo 'ran ls command in anka'" \
+    "--debug run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c \"env\" : echo 'ran env command in anka'"
 
   run $PWD/hooks/command
 
@@ -247,8 +249,8 @@ env"
   export BUILDKITE_PLUGIN_ANKA_BASH_INTERACTIVE=true
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -i -c \"ls -alht\" : echo 'ran ls command in anka'" \
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -i -c \"ls -alht\" : echo 'ran ls command in anka'" \
 
   run $PWD/hooks/command
 
@@ -266,9 +268,9 @@ env"
   export BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_SLEEP="5"
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c \"sleep 5; ls -alht\" : echo ran command in anka" \
-    "run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c \"sleep 5; env\" : echo ran command in anka"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c \"sleep 5; ls -alht\" : echo ran command in anka" \
+    "run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c \"sleep 5; env\" : echo ran command in anka"
 
   run $PWD/hooks/command
 
@@ -277,9 +279,9 @@ env"
   unset BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_SLEEP
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c \"ls -alht\" : echo 'ran command in anka'" \
-    "run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c \"env\" : echo 'ran command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c \"ls -alht\" : echo 'ran command in anka'" \
+    "run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c \"env\" : echo 'ran command in anka'"
 
   run $PWD/hooks/command
 
@@ -294,9 +296,9 @@ env"
   export BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_PING_SLEEP="8.8.8.8"
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c \"while ! ping -c1 8.8.8.8 | grep -v '\\---'; do sleep 1; done;ls -alht\" : echo 'ran command in anka'" \
-    "run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c \"while ! ping -c1 8.8.8.8 | grep -v '\\---'; do sleep 1; done;env\" : echo r'an command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c \"while ! ping -c1 8.8.8.8 | grep -v '\\---'; do sleep 1; done;ls -alht\" : echo 'ran command in anka'" \
+    "run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c \"while ! ping -c1 8.8.8.8 | grep -v '\\---'; do sleep 1; done;env\" : echo r'an command in anka'"
 
   run $PWD/hooks/command
 
@@ -305,9 +307,9 @@ env"
   unset BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_PING_SLEEP
 
   stub anka \
-    "run --no-volume 10.14-UUID kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
-    "run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c \"ls -alht\" : echo 'ran command in anka'" \
-    "run --workdir /private/var/tmp/ankafs.0 10.14-UUID bash -c \"env\" : echo 'ran command in anka'"
+    "run --no-volume $JOB_IMAGE kextstat : echo '${KEXSTAT_OUTPUT_PRESENT}'" \
+    "run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c \"ls -alht\" : echo 'ran command in anka'" \
+    "run --workdir /private/var/tmp/ankafs.0 $JOB_IMAGE bash -c \"env\" : echo 'ran command in anka'"
 
   run $PWD/hooks/command
 
