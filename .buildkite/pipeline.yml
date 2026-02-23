@@ -10,7 +10,7 @@ steps:
     # agents:
     #   queue: mac-anka
     plugins:
-      - veertuinc/anka#v2.0.0:
+      - veertuinc/anka#dev:
           vm-name: 26.3-arm64
           # copy-in-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}
           # copy-in-vm-path: /tmp/buildkite-cache
