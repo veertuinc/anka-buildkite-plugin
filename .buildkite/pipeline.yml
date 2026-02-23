@@ -16,3 +16,5 @@ steps:
           # copy-in-vm-path: /tmp/buildkite-cache
           copy-out-vm-path: /tmp/buildkite-cache
           copy-out-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}
+          debug: true
+          anka-debug: true
