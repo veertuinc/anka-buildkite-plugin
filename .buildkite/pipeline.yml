@@ -10,7 +10,7 @@ steps:
     #   queue: mac-anka
     plugins:
       - veertuinc/anka#v2.0.0:
-          vm-name: macos-base
+          vm-name: 26.3-arm64
           copy-in-host-path: ./.build-cache
           copy-in-vm-path: /private/var/tmp/cache
           copy-out-vm-path: /private/var/tmp/cache
