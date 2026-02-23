@@ -105,6 +105,10 @@ vm_agent_path=$(anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" bash -c 'c
 set -e
 if [[ -z "$vm_agent_path" ]]; then
   host_agent_path="$(command -v buildkite-agent 2>/dev/null || true)"
+  # If /opt/homebrew/bin/buildkite-agent is a symlink, resolve to the real path
+  if [[ -L "$host_agent_path" ]]; then
+    host_agent_path="$(readlink -f "$host_agent_path" 2>/dev/null || echo "$host_agent_path")"
+  fi
   if [[ -z "$host_agent_path" ]] || [[ ! -f "$host_agent_path" ]]; then
     echo "buildkite-agent not found on host (checked PATH); cannot copy into VM." >&2
     exit 1
