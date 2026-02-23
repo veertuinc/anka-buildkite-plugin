@@ -148,6 +148,7 @@ set -e
 copy_out_exit_code=0
 if [[ -n "$copy_out_vm_path" ]]; then
   echo "--- :anka: Copying ${job_image_name}:${copy_out_vm_path} to ${copy_out_host_path}"
+  mkdir -p "$(dirname "$copy_out_host_path")"
   set +e
   # shellcheck disable=SC2086
   plugin_prompt_and_run anka $ANKA_DEBUG cp -a "${job_image_name}:${copy_out_vm_path}" "$copy_out_host_path"
