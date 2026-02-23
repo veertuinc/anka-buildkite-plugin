@@ -75,17 +75,6 @@ function lock_file() {
 export BUILDKITE_PLUGIN_ANKA_ANKA_DEBUG=$(plugin_read_config ANKA_DEBUG false)
 "$BUILDKITE_PLUGIN_ANKA_ANKA_DEBUG" && export ANKA_DEBUG="--debug" || export ANKA_DEBUG=
 
-########################################################
-# Sleep (useful for networking related issues in the VM)
-export BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_SLEEP=$(plugin_read_config PRE_EXECUTE_SLEEP false)
-[[ "$BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_SLEEP" != "false" ]] && export PRE_EXECUTE_SLEEP="sleep $BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_SLEEP; " || export PRE_EXECUTE_SLEEP=
-
-########################################################
-# while-Sleep (useful for networking init issues; similar to the PRE_EXECUTE_SLEEP)
-export BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_PING_SLEEP=$(plugin_read_config PRE_EXECUTE_PING_SLEEP)
-export PRE_EXECUTE_PING_SLEEP=
-[[ -n "$BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_PING_SLEEP" ]] && export PRE_EXECUTE_PING_SLEEP="while ! ping -c1 $BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_PING_SLEEP | grep -v '\---'; do sleep 1; done;"
-
 ###################
 # Registry Failover
 export BUILDKITE_PLUGIN_ANKA_FAILOVER_REGISTRIES=$(plugin_read_list FAILOVER_REGISTRIES)

@@ -8,46 +8,7 @@ DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 job_image_name="$(plugin_read_config VM_NAME)-${BUILDKITE_JOB_ID}"
 
-##########################
-# FUSE compatibility logic
-# This is compat logic to handle when Veertu's FUSE driver is not installed (if we want to mount a volume)
-if [[ $(plugin_read_config NO_VOLUME false) == false ]]; then
-  echo "--- :anka: Detecting FUSE compatibility"
-  # shellcheck disable=SC2086
-  if plugin_prompt_and_run anka run --no-volume "$job_image_name" kextstat | grep "com.veertu.filesystems.vtufs" &>/dev/null; then
-    echo "Veertu FUSE driver detected. Will mount volume into ${job_image_name}."
-  else
-    echo "Veertu FUSE driver NOT detected."
-    echo "Copying repo files from $(plugin_read_config VOLUME .) to ${job_image_name}:$(plugin_read_config WORKDIR /private/var/tmp/ankafs.0). (This may take awhile depending on the size)"
-    plugin_prompt_and_run anka $ANKA_DEBUG cp -a "$(plugin_read_config VOLUME .)" "${job_image_name}:$(plugin_read_config WORKDIR /private/var/tmp/ankafs.0)"
-  fi
-  
-  # Manually assign the workdir to be the ankafs to ensure consistent workdir between FUSE and non-FUSE VMs
-  # shellcheck disable=SC2034
-  BUILDKITE_PLUGIN_ANKA_WORKDIR="$(plugin_read_config WORKDIR /private/var/tmp/ankafs.0)"
-fi
-
-# Ensure the (user-specified) workdir exists (we ignore our default value for the purposes of this logic)
-if [[ -n $(plugin_read_config WORKDIR) ]] && [[ $(plugin_read_config WORKDIR_CREATE false) == true ]]; then
-  echo "--- :anka: Ensuring $(plugin_read_config WORKDIR) exists"
-  # shellcheck disable=SC2086
-  plugin_prompt_and_run anka $ANKA_DEBUG run "$job_image_name" mkdir -p "$(plugin_read_config WORKDIR)"
-fi
-
-#######################################
-# Parse out all the run command options
 run_args=()
-
-# Mount host directory (current directory by default)
-if [[ -n $(plugin_read_config VOLUME) ]]; then
-  run_args+=("--volume" "$(plugin_read_config VOLUME)")
-fi
-
-# Prevent the mounting of the host directory
-# shellcheck disable=SC2091
-if $(plugin_read_config NO_VOLUME false); then
-  run_args+=("--no-volume")
-fi
 
 # Inherit environment variables from host
 # shellcheck disable=SC2091
@@ -72,32 +33,86 @@ if $(plugin_read_config WAIT_TIME false); then
   run_args+=("--wait-time")
 fi
 
-# Add the workdir if specified
-# shellcheck disable=SC2091
-if [[ -n $(plugin_read_config WORKDIR) ]]; then
-  run_args+=("--workdir" "$(plugin_read_config WORKDIR)")
-fi
-
 run_args+=("$job_image_name")
 
-###############################################################
-# Obtain options to pass to bash command on the end of anka run
-bash_ops=()
+copy_in_host_path="$(plugin_read_config COPY_IN_HOST_PATH)"
+copy_in_vm_path="$(plugin_read_config COPY_IN_VM_PATH)"
+copy_out_vm_path="$(plugin_read_config COPY_OUT_VM_PATH)"
+copy_out_host_path="$(plugin_read_config COPY_OUT_HOST_PATH)"
 
-# Run bash with -i for interactive (anka run defaults to this off)
-# shellcheck disable=SC2091
-if $(plugin_read_config BASH_INTERACTIVE false); then
-  bash_ops+=("-i")
+if [[ -n "$copy_in_host_path" && -z "$copy_in_vm_path" ]] || [[ -z "$copy_in_host_path" && -n "$copy_in_vm_path" ]]; then
+  echo "Both copy-in-host-path and copy-in-vm-path are required together."
+  exit 1
 fi
-bash_ops+=("-c") # Needed, don't remove or move
 
-##########
-# ANKA RUN
-commands=()
-while IFS='' read -r line; do commands+=("${PRE_EXECUTE_SLEEP}${PRE_EXECUTE_PING_SLEEP}$line"); done <<< "$BUILDKITE_COMMAND"
-for command in "${commands[@]:-}"; do
-  echo "+++ Executing $command in $job_image_name"
+if [[ -n "$copy_out_vm_path" && -z "$copy_out_host_path" ]] || [[ -z "$copy_out_vm_path" && -n "$copy_out_host_path" ]]; then
+  echo "Both copy-out-vm-path and copy-out-host-path are required together."
+  exit 1
+fi
+
+if [[ -n "$copy_in_host_path" ]]; then
+  echo "--- :anka: Copying ${copy_in_host_path} to ${job_image_name}:${copy_in_vm_path}"
   # shellcheck disable=SC2086
-  plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" bash "${bash_ops[@]:+${bash_ops[@]}}" "$command"
-done
+  plugin_prompt_and_run anka $ANKA_DEBUG cp -a "$copy_in_host_path" "${job_image_name}:${copy_in_vm_path}"
+fi
 
+if [[ -z "${BUILDKITE_JOB_ID:-}" ]]; then
+  echo "BUILDKITE_JOB_ID must be set in order to run buildkite-agent bootstrap."
+  exit 1
+fi
+
+bootstrap_args=("--job" "$BUILDKITE_JOB_ID")
+
+add_bootstrap_arg_if_set() {
+  local environment_variable_name="$1"
+  local bootstrap_flag="$2"
+  local bootstrap_value="${!environment_variable_name:-}"
+  if [[ -n "$bootstrap_value" ]]; then
+    bootstrap_args+=("$bootstrap_flag" "$bootstrap_value")
+  fi
+}
+
+add_bootstrap_arg_if_set "BUILDKITE_COMMAND" "--command"
+add_bootstrap_arg_if_set "BUILDKITE_REPO" "--repository"
+add_bootstrap_arg_if_set "BUILDKITE_COMMIT" "--commit"
+add_bootstrap_arg_if_set "BUILDKITE_BRANCH" "--branch"
+add_bootstrap_arg_if_set "BUILDKITE_TAG" "--tag"
+add_bootstrap_arg_if_set "BUILDKITE_REFSPEC" "--refspec"
+add_bootstrap_arg_if_set "BUILDKITE_PLUGINS" "--plugins"
+add_bootstrap_arg_if_set "BUILDKITE_PULL_REQUEST" "--pullrequest"
+add_bootstrap_arg_if_set "BUILDKITE_AGENT_NAME" "--agent"
+add_bootstrap_arg_if_set "BUILDKITE_AGENT_META_DATA_QUEUE" "--queue"
+add_bootstrap_arg_if_set "BUILDKITE_ORGANIZATION_SLUG" "--organization"
+add_bootstrap_arg_if_set "BUILDKITE_PIPELINE_SLUG" "--pipeline"
+add_bootstrap_arg_if_set "BUILDKITE_PIPELINE_PROVIDER" "--pipeline-provider"
+add_bootstrap_arg_if_set "BUILDKITE_ARTIFACT_PATHS" "--artifact-upload-paths"
+add_bootstrap_arg_if_set "BUILDKITE_ARTIFACT_UPLOAD_DESTINATION" "--artifact-upload-destination"
+add_bootstrap_arg_if_set "BUILDKITE_BUILD_PATH" "--build-path"
+add_bootstrap_arg_if_set "BUILDKITE_HOOKS_PATH" "--hooks-path"
+add_bootstrap_arg_if_set "BUILDKITE_ADDITIONAL_HOOKS_PATHS" "--additional-hooks-paths"
+add_bootstrap_arg_if_set "BUILDKITE_PLUGINS_PATH" "--plugins-path"
+
+echo "+++ Executing buildkite-agent bootstrap in $job_image_name"
+set +e
+# shellcheck disable=SC2086
+plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" buildkite-agent bootstrap "${bootstrap_args[@]:+${bootstrap_args[@]}}"
+bootstrap_exit_code=$?
+set -e
+
+copy_out_exit_code=0
+if [[ -n "$copy_out_vm_path" ]]; then
+  echo "--- :anka: Copying ${job_image_name}:${copy_out_vm_path} to ${copy_out_host_path}"
+  set +e
+  # shellcheck disable=SC2086
+  plugin_prompt_and_run anka $ANKA_DEBUG cp -a "${job_image_name}:${copy_out_vm_path}" "$copy_out_host_path"
+  copy_out_exit_code=$?
+  set -e
+fi
+
+if [[ "$bootstrap_exit_code" -ne 0 ]]; then
+  exit "$bootstrap_exit_code"
+fi
+
+if [[ "$copy_out_exit_code" -ne 0 ]]; then
+  exit "$copy_out_exit_code"
+fi

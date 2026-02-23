@@ -25,17 +25,19 @@ configuration:
       type: boolean
     wait-time:
       type: boolean
-    workdir:
+    copy-in-host-path:
       type: string
-    workdir-create:
-      type: boolean
+    copy-in-vm-path:
+      type: string
+    copy-out-vm-path:
+      type: string
+    copy-out-host-path:
+      type: string
     debug:
       type: boolean
     anka-debug:
       type: boolean
     cleanup:
-      type: boolean
-    bash-interactive:
       type: boolean
     pre-commands:
       type: array
@@ -43,10 +45,6 @@ configuration:
       type: array
     failover-registries:
       type: array
-    pre-execute-sleep:
-      type: integer
-    pre-execute-ping-sleep:
-      type: string
     modify-cpu:
       type: integer
     modify-ram:

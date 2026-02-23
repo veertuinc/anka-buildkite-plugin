@@ -4,9 +4,17 @@ A [Buildkite plugin](https://buildkite.com/docs/agent/v3/plugins) for running pi
 
 - You need to ensure your Anka Nodes (host machines running Anka software) have the Buildkite agent installed and show under your Agents listing inside of Buildkite.
 - The plugin will create a cloned VM to run instructions in and will delete the VM on pipeline status `cancellation`, `failure`, or `success`.
-- The plugin does not automatically mount the `buildkite-agent` or inject any `BUILDKITE_` environment variables.
+- The plugin executes `buildkite-agent bootstrap` inside of the cloned VM during the `command` hook.
+- Your guest VM image must include `buildkite-agent` in its `PATH`.
 - A lock file (`/tmp/anka-buildkite-plugin-lock`) is created around pull and cloning. This prevents collision/ram state corruption when you're running two different jobs and pulling two different tags on the same anka node. The error you'd see otherwise is `state_lib/b026f71c-7675-11e9-8883-f01898ec0a5d.ank: failed to open image, error 2`
-- If we are unable to detect the FUSE driver within your VM, we will use the `anka cp` utility to copy the contents of your `volume` (or current working directory) into the VM (unless `no-volume` is `true`).
+
+## Bootstrap Execution
+
+The plugin now runs the Buildkite bootstrap process in the VM (`buildkite-agent bootstrap`) instead of evaluating `BUILDKITE_COMMAND` line-by-line through `bash -c`.
+
+- Buildkite bootstrap reference: <https://buildkite.com/docs/agent/cli/reference/bootstrap#running-the-bootstrap-usage>
+- Use `inherit-environment-vars` or `environment-file` if you need additional environment values available in the guest VM runtime.
+- Use `copy-in-*` and `copy-out-*` options for explicit host/guest directory sync (for example, build cache round trips).
 
 ## Anka VM [Template & Tag](https://docs.veertu.com/anka/anka-virtualization-cli/getting-started/creating-vms/#vm-clones) Requirements
 
@@ -30,7 +38,7 @@ Hook | Description
 `pre-checkout` | Download the specified virtual machine from your registry (if applicable).
 `post-checkout` | Clone the virtual machine and perform any hardware modifications.
 `pre-command` | Run any of your `pre-commands` (see below).
-`command` | Execute your command inside of the cloned virtual machine.
+`command` | Run `buildkite-agent bootstrap` inside of the cloned virtual machine.
 `post-command` | Run any of your `post-commands` (see below).
 `pre-exit` | Perform any clean up steps
 
@@ -75,56 +83,72 @@ The path to a file containing environment variables you wish to inject into you 
 
 Example: `./my-env.txt`
 
-### `no-volume` (optional)
+### `copy-in-host-path` (optional)
 
-Set this to `true` if you do not wish to mount the current directory into the Anka VM.
+Host path to copy into the VM before `buildkite-agent bootstrap` runs.
 
-Example: `true`
+Must be used together with `copy-in-vm-path`.
 
-> [Veertu Inc](https://veertu.com) (creators of Anka) state that the performance of using shared/mounted folders is not optimized. If you disable this, you need to be aware that the `git clone` of your repo will no longer be available inside of the VM.
+Example: `./.build-cache`
 
-You can simply clone it as your first step:
+### `copy-in-vm-path` (optional)
+
+Destination path in the VM for `copy-in-host-path`.
+
+Must be used together with `copy-in-host-path`.
+
+Example: `/private/var/tmp/cache`
+
+### `copy-out-vm-path` (optional)
+
+VM path to copy back to the host after `buildkite-agent bootstrap` exits.
+
+Must be used together with `copy-out-host-path`.
+
+Example: `/private/var/tmp/cache`
+
+### `copy-out-host-path` (optional)
+
+Host destination for `copy-out-vm-path`.
+
+Must be used together with `copy-out-vm-path`.
+
+Example: `./.build-cache`
+
+### Copy Round-Trip Example
 
 ```yml
 steps:
-  - commands:
-     - git clone $BUILDKITE_REPO && cd repo-folder && git checkout -f $BUILDKITE_COMMIT
-     - cd repo-folder; ./build.sh
+  - command: make test
+    agents: "queue=mac-anka-large-node-fleet"
     plugins:
-      - thedyrt/skip-checkout#v0.1.1: ~
-      - veertuinc/anka#v0.8.0:
+      - veertuinc/anka#v2.0.0:
          vm-name: macos-base
-         no-volume: true
-         wait-network: true
+         copy-in-host-path: ./.build-cache
+         copy-in-vm-path: /private/var/tmp/cache
+         copy-out-vm-path: /private/var/tmp/cache
+         copy-out-host-path: ./.build-cache
 ```
 
-### `workdir` (optional)
+### Deprecated and Removed Options
 
-The fully-qualified path of the working directory inside the Anka VM. Defaults to `/private/var/tmp/ankafs.0` unless `no-volume` is set to true.
+The following options were removed as part of moving execution to full in-VM bootstrap:
 
-Example: `/some/directory`
-
-### `volume` (optional)
-
-The path to a directory on your host machine (where buildkite runs) you wish to copy into the Anka VM. Destination defaults to the current `workdir` (by default, `/private/var/tmp/ankafs.0`).
-
-Example: `/some/directory`
+- `workdir`
+- `workdir-create`
+- `bash-interactive`
+- `pre-execute-sleep`
+- `pre-execute-ping-sleep`
 
 ### `wait-network` (optional)
 
-Set this to `true` if you wish to delay the execution of your `command` until networking has been established in the Anka VM.
+Set this to `true` if you wish to delay bootstrap execution until networking has been established in the Anka VM.
 
 Example: `true`
 
 ### `wait-time` (optional)
 
-Set this to `true` if you wish to delay the execution of your `command` until sntp has been updated in the Anka VM.
-
-Example: `true`
-
-### `workdir-create` (optional)
-
-Will execute `mkdir -p $WORKDIR` to ensure it exists before executing commands.
+Set this to `true` if you wish to delay bootstrap execution until sntp has been updated in the Anka VM.
 
 Example: `true`
 
@@ -146,12 +170,6 @@ Set this to `false` to leave the cloned images in a failed or complete build for
 - You will need to run your buildkite agent with `cancel-grace-period=60`, as the [default 10 seconds is not enough time](https://forum.buildkite.community/t/problems-with-anka-plugin-and-pre-exit/365/7).
 
 Example: `false`
-
-### `bash-interactive` (optional)
-
-This allows you to execute commands through anka run with an interactive shell (`anka run` does not support tty/interactive shell by default).
-
-Example: `true`
 
 ### `pre-commands` (optional) (DANGEROUS)
 
@@ -196,18 +214,6 @@ steps:
             - 'registry_2'
             - 'registry_3'
 ```
-
-### `pre-execute-sleep` (optional)
-
-Will execute a sleep with the value you specify within anka run and before the first command. Useful if you need to ensure that certain processes and networking are fully functional before running your commands in the VM.
-
-Example: `5` (seconds)
-
-### `pre-execute-ping-sleep` (optional)
-
-Will execute a ping while loop sleep with the ip you specify before any commands run in the VM. Useful if you need to ensure that certain processes and networking are fully functional before running your commands in the VM.
-
-Example: `8.8.8.8`
 
 ## Anka Modify ---
 
