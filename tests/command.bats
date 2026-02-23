@@ -71,8 +71,8 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_WAIT_TIME="true"
 
   stub anka \
-    "run $JOB_IMAGE bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
     "run $JOB_IMAGE sleep 10 : echo 'waited'" \
+    "run $JOB_IMAGE bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
     "run $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'"
 
   run $PWD/hooks/command
@@ -88,8 +88,8 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_WAIT_TIME="15"
 
   stub anka \
-    "run $JOB_IMAGE bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
     "run $JOB_IMAGE sleep 15 : echo 'waited 15s'" \
+    "run $JOB_IMAGE bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
     "run $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'"
 
   run $PWD/hooks/command
@@ -166,6 +166,7 @@ teardown() {
 
   stub anka \
     "run $JOB_IMAGE bash -c 'command -v buildkite-agent' : exit 1" \
+    "run $JOB_IMAGE mkdir -p /usr/local/bin : echo 'mkdir ok'" \
     "cp -a ${fake_agent_dir}/buildkite-agent $JOB_IMAGE:/usr/local/bin/buildkite-agent : echo 'copied agent'" \
     "run $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'"
 
