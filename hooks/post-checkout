@@ -17,9 +17,8 @@ plugin_prompt_and_run anka $ANKA_DEBUG clone "$(plugin_read_config VM_NAME)" "$j
 BUILDKITE_PLUGIN_ANKA_MODIFY_CPU=$(plugin_read_list MODIFY_CPU)
 BUILDKITE_PLUGIN_ANKA_MODIFY_RAM=$(plugin_read_list MODIFY_RAM)
 BUILDKITE_PLUGIN_ANKA_MODIFY_MAC=$(plugin_read_list MODIFY_MAC)
-BUILDKITE_PLUGIN_ANKA_START_DEVICES=$(plugin_read_list START_DEVICES)
 
-if [[ -n "${BUILDKITE_PLUGIN_ANKA_MODIFY_CPU}" ]] || [[ -n "${BUILDKITE_PLUGIN_ANKA_MODIFY_RAM}" ]] || [[ -n "${BUILDKITE_PLUGIN_ANKA_START_DEVICES}" ]] || [[ -n "${BUILDKITE_PLUGIN_ANKA_MODIFY_MAC}" ]]; then
+if [[ -n "${BUILDKITE_PLUGIN_ANKA_MODIFY_CPU}" ]] || [[ -n "${BUILDKITE_PLUGIN_ANKA_MODIFY_RAM}" ]] || [[ -n "${BUILDKITE_PLUGIN_ANKA_MODIFY_MAC}" ]]; then
   echo "--- :anka: Ensuring $job_image_name is stopped"
   FORCED=${FORCED:-false} # Used for bats triggering of ops
   stop_ops=()
@@ -50,16 +49,4 @@ if [[ -n "${BUILDKITE_PLUGIN_ANKA_MODIFY_MAC}" ]]; then
   echo "--- :anka: Modifying MAC to ${BUILDKITE_PLUGIN_ANKA_MODIFY_MAC}"
   # shellcheck disable=SC2086
   plugin_prompt_and_run anka modify $job_image_name set network-card --mac ${BUILDKITE_PLUGIN_ANKA_MODIFY_MAC}
-fi
-
-if [[ -n "${BUILDKITE_PLUGIN_ANKA_START_DEVICES}" ]]; then
-  start_devices=()
-  while IFS='' read -r line; do start_devices+=("$line"); done <<< "$BUILDKITE_PLUGIN_ANKA_START_DEVICES"
-  option=""
-  for device in "${start_devices[@]:+${start_devices[@]}}"; do
-   option+="-d ${device} "
-  done
-  echo "--- :anka: Starting VM with ${option}"
-  # shellcheck disable=SC2086
-  plugin_prompt_and_run anka start $option $job_image_name
 fi

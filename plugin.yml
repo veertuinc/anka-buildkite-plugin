@@ -21,10 +21,8 @@ configuration:
       type: boolean
     volume:
       type: string
-    wait-network:
-      type: boolean
     wait-time:
-      type: boolean
+      type: [boolean, integer]
     copy-in-host-path:
       type: string
     copy-in-vm-path:
@@ -51,8 +49,6 @@ configuration:
       type: integer
     modify-mac:
       type: string
-    start-devices:
-      type: array
   required:
     - vm-name
 additionalProperties: false

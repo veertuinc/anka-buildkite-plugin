@@ -11,8 +11,7 @@ steps:
     plugins:
       - veertuinc/anka#v2.0.0:
           vm-name: 26.3-arm64
-          copy-in-host-path: ./.build-cache
-          copy-in-vm-path: /private/var/tmp/cache
-          copy-out-vm-path: /private/var/tmp/cache
-          copy-out-host-path: ./.build-cache
-          wait-network: true
+          copy-in-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}
+          copy-in-vm-path: /tmp/buildkite-cache/
+          copy-out-vm-path: /tmp/buildkite-cache/
+          copy-out-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}

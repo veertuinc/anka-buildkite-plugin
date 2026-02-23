@@ -64,19 +64,35 @@ teardown() {
   unset BUILDKITE_PLUGIN_ANKA_ENVIRONMENT_FILE
 }
 
-@test "Run buildkite-agent bootstrap and wait for network/time" {
-  export BUILDKITE_PLUGIN_ANKA_WAIT_NETWORK="true"
+@test "Run buildkite-agent bootstrap and wait for time" {
   export BUILDKITE_PLUGIN_ANKA_WAIT_TIME="true"
 
   stub anka \
-    "run --wait-network --wait-time $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'"
+    "run $JOB_IMAGE sleep 10 : echo 'waited'" \
+    "run $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'"
 
   run $PWD/hooks/command
 
   assert_success
+  assert_output --partial "waited"
   assert_output --partial "ran bootstrap in anka"
 
-  unset BUILDKITE_PLUGIN_ANKA_WAIT_NETWORK
+  unset BUILDKITE_PLUGIN_ANKA_WAIT_TIME
+}
+
+@test "Run buildkite-agent bootstrap with custom wait-time seconds" {
+  export BUILDKITE_PLUGIN_ANKA_WAIT_TIME="15"
+
+  stub anka \
+    "run $JOB_IMAGE sleep 15 : echo 'waited 15s'" \
+    "run $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'"
+
+  run $PWD/hooks/command
+
+  assert_success
+  assert_output --partial "waited 15s"
+  assert_output --partial "ran bootstrap in anka"
+
   unset BUILDKITE_PLUGIN_ANKA_WAIT_TIME
 }
 

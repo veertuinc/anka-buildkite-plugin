@@ -139,18 +139,13 @@ The following options were removed as part of moving execution to full in-VM boo
 - `bash-interactive`
 - `pre-execute-sleep`
 - `pre-execute-ping-sleep`
-
-### `wait-network` (optional)
-
-Set this to `true` if you wish to delay bootstrap execution until networking has been established in the Anka VM.
-
-Example: `true`
+- `wait-network`
 
 ### `wait-time` (optional)
 
-Set this to `true` if you wish to delay bootstrap execution until sntp has been updated in the Anka VM.
+The `anka run` CLI has no `--wait-time` option. When enabled, the plugin runs `sleep` inside the VM before bootstrap to allow sntp to update the system time. Use `true` for a 10-second default, or an integer for custom seconds.
 
-Example: `true`
+Example: `true` or `15`
 
 ### `debug` (optional)
 
@@ -236,16 +231,6 @@ Example: `32`
 Will stop the VM, set the MAC address, and then execute commands you've specified.
 
 Example: `00:1B:44:11:3A:B7`
-
-## Anka Start ---
-
-### `start-devices` (optional)
-
-Will stop the VM, then start it with the USB device(s).
-
-- Input should be the USB device ID/Location and should already be claimed.
-
-Example: `341835776`
 
 ## License
 

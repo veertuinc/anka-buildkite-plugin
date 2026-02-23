@@ -21,19 +21,10 @@ if [[ -n $(plugin_read_config ENVIRONMENT_FILE) ]] ; then
   run_args+=("--env-file" "$(plugin_read_config ENVIRONMENT_FILE)")
 fi
 
-# Wait to start processing until network can be established
-# shellcheck disable=SC2091
-if $(plugin_read_config WAIT_NETWORK false); then
-  run_args+=("--wait-network")
-fi
-
-# Wait to start processing until time is updated
-# shellcheck disable=SC2091
-if $(plugin_read_config WAIT_TIME false); then
-  run_args+=("--wait-time")
-fi
-
 run_args+=("$job_image_name")
+
+# Wait for sntp to update VM time (anka run has no --wait-time; we sleep inside the VM)
+wait_time_seconds="$(plugin_read_config WAIT_TIME)"
 
 copy_in_host_path="$(plugin_read_config COPY_IN_HOST_PATH)"
 copy_in_vm_path="$(plugin_read_config COPY_IN_VM_PATH)"
@@ -91,6 +82,21 @@ add_bootstrap_arg_if_set "BUILDKITE_BUILD_PATH" "--build-path"
 add_bootstrap_arg_if_set "BUILDKITE_HOOKS_PATH" "--hooks-path"
 add_bootstrap_arg_if_set "BUILDKITE_ADDITIONAL_HOOKS_PATHS" "--additional-hooks-paths"
 add_bootstrap_arg_if_set "BUILDKITE_PLUGINS_PATH" "--plugins-path"
+
+# anka run has no --wait-time; when wait-time is enabled, sleep in the VM for sntp to sync
+if [[ -n "$wait_time_seconds" ]] && [[ "$wait_time_seconds" =~ ^(true|on|1)$ ]]; then
+  wait_time_seconds=10
+elif [[ -n "$wait_time_seconds" ]] && [[ "$wait_time_seconds" =~ ^[0-9]+$ ]]; then
+  : # use configured seconds
+else
+  wait_time_seconds=
+fi
+
+if [[ -n "$wait_time_seconds" ]]; then
+  echo "--- :anka: Waiting ${wait_time_seconds}s for VM time sync"
+  # shellcheck disable=SC2086
+  plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" sleep "$wait_time_seconds"
+fi
 
 echo "+++ Executing buildkite-agent bootstrap in $job_image_name"
 set +e
