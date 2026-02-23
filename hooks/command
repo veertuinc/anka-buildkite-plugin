@@ -25,7 +25,7 @@ run_args+=("$job_image_name")
 
 # Verify VM is functional before proceeding
 # shellcheck disable=SC2086
-if ! anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" true; then
+if ! plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" true; then
   echo "ERROR: VM ${job_image_name} is not functional; anka run true failed." >&2
   exit 1
 fi
