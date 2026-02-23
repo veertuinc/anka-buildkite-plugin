@@ -59,7 +59,7 @@ if [[ -z "${BUILDKITE_JOB_ID:-}" ]]; then
   exit 1
 fi
 
-bootstrap_args=("--job" "$BUILDKITE_JOB_ID")
+bootstrap_args=("--job" "$BUILDKITE_JOB_ID" "--phases" "checkout,command")
 
 add_bootstrap_arg_if_set() {
   local environment_variable_name="$1"
