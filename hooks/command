@@ -10,11 +10,9 @@ job_image_name="$(plugin_read_config VM_NAME)-${BUILDKITE_JOB_ID}"
 
 run_args=()
 
-# Inherit environment variables from host
-# shellcheck disable=SC2091
-if $(plugin_read_config INHERIT_ENVIRONMENT_VARS false) ; then
-  run_args+=("--env")
-fi
+# Bootstrap requires BUILDKITE_AGENT_ACCESS_TOKEN and other agent env; always pass host env.
+# Additional control via inherit-environment-vars is deprecated (env is always inherited).
+run_args+=("--env")
 
 # Provide an environment variable file
 if [[ -n $(plugin_read_config ENVIRONMENT_FILE) ]] ; then

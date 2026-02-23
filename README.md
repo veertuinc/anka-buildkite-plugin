@@ -13,7 +13,7 @@ A [Buildkite plugin](https://buildkite.com/docs/agent/v3/plugins) for running pi
 The plugin now runs the Buildkite bootstrap process in the VM (`buildkite-agent bootstrap`) instead of evaluating `BUILDKITE_COMMAND` line-by-line through `bash -c`.
 
 - Buildkite bootstrap reference: <https://buildkite.com/docs/agent/cli/reference/bootstrap#running-the-bootstrap-usage>
-- Use `inherit-environment-vars` or `environment-file` if you need additional environment values available in the guest VM runtime.
+- Use `environment-file` if you need additional environment values available in the guest VM runtime (host env is always passed for bootstrap).
 - Use `copy-in-*` and `copy-out-*` options for explicit host/guest directory sync (for example, build cache round trips).
 
 ## Anka VM [Template & Tag](https://docs.veertu.com/anka/anka-virtualization-cli/getting-started/creating-vms/#vm-clones) Requirements
@@ -68,12 +68,6 @@ By default, the `anka-buildkite-plugin` will only pull the VM Template from the 
 
 - Should your registry be down and the pull fail, the plugin will not fail the buildkite run. This prevents your registry from being a single point of failure for pipelines. We suggest monitoring for registry availability or failures.
 - You can set the value to `"shrink"` in order to remove other local tags for the `vm-name`, optimizing the footprint.
-
-Example: `true`
-
-### `inherit-environment-vars` (optional)
-
-Set this to `true` to inject the environment variables set on your host into the Anka VM.
 
 Example: `true`
 
