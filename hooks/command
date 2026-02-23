@@ -18,9 +18,10 @@ trap cleanup_on_cancel SIGTERM SIGINT
 run_args=()
 
 # Use the agent's env file when available (avoids long -e arg lists and printf errors).
-# Fallback to BUILDKITE_* vars when env file is not set (e.g. tests).
+# BUILDKITE_AGENT_ACCESS_TOKEN is not in the env file; pass it explicitly for artifact/meta-data.
 if [[ -n "${BUILDKITE_ENV_FILE:-}" && -f "${BUILDKITE_ENV_FILE}" ]]; then
   run_args+=("--env-file" "$BUILDKITE_ENV_FILE")
+  [[ -n "${BUILDKITE_AGENT_ACCESS_TOKEN:-}" ]] && run_args+=("-e" "BUILDKITE_AGENT_ACCESS_TOKEN=${BUILDKITE_AGENT_ACCESS_TOKEN}")
 else
   for var in $(printf '%s\n' "${!BUILDKITE_@}" | sort -u); do
     [[ -n "${!var:-}" ]] && run_args+=("-e" "$var=${!var}")

@@ -13,7 +13,8 @@ A [Buildkite plugin](https://buildkite.com/docs/agent/v3/plugins) for running pi
 The plugin now runs the Buildkite bootstrap process in the VM (`buildkite-agent bootstrap`) instead of evaluating `BUILDKITE_COMMAND` line-by-line through `bash -c`.
 
 - Buildkite bootstrap reference: <https://buildkite.com/docs/agent/cli/reference/bootstrap#running-the-bootstrap-usage>
-- Use `environment-file` if you need additional environment values available in the guest VM runtime (only `BUILDKITE_*` vars are passed by default).
+- The agent's job environment (`BUILDKITE_ENV_FILE`) is always passed into the VM; users cannot change this.
+- Use `environment-file` if you need additional environment values available in the guest VM runtime.
 - Use `copy-in-*` and `copy-out-*` options for explicit host/guest directory sync (for example, build cache round trips).
 
 ## Anka VM [Template & Tag](https://docs.veertu.com/anka/anka-virtualization-cli/getting-started/creating-vms/#vm-clones) Requirements
@@ -73,7 +74,7 @@ Example: `true`
 
 ### `environment-file` (optional)
 
-The path to a file containing environment variables you wish to inject into you Anka VM.
+Path to an additional file of environment variables to pass into the VM. The agent's job environment is always passed; this option is for extra vars only.
 
 Example: `./my-env.txt`
 
