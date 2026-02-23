@@ -13,7 +13,7 @@ A [Buildkite plugin](https://buildkite.com/docs/agent/v3/plugins) for running pi
 The plugin now runs the Buildkite bootstrap process in the VM (`buildkite-agent bootstrap`) instead of evaluating `BUILDKITE_COMMAND` line-by-line through `bash -c`.
 
 - Buildkite bootstrap reference: <https://buildkite.com/docs/agent/cli/reference/bootstrap#running-the-bootstrap-usage>
-- Use `environment-file` if you need additional environment values available in the guest VM runtime (host env is always passed for bootstrap).
+- Use `environment-file` if you need additional environment values available in the guest VM runtime (only `BUILDKITE_*` vars are passed by default).
 - Use `copy-in-*` and `copy-out-*` options for explicit host/guest directory sync (for example, build cache round trips).
 
 ## Anka VM [Template & Tag](https://docs.veertu.com/anka/anka-virtualization-cli/getting-started/creating-vms/#vm-clones) Requirements

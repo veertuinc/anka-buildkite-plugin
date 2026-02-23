@@ -17,9 +17,10 @@ trap cleanup_on_cancel SIGTERM SIGINT
 
 run_args=()
 
-# Bootstrap requires BUILDKITE_AGENT_ACCESS_TOKEN and other agent env; always pass host env.
-# Additional control via inherit-environment-vars is deprecated (env is always inherited).
-run_args+=("--env")
+# Pass only BUILDKITE_* vars (VM keeps its default HOME; no host env leak)
+for var in $(printf '%s\n' "${!BUILDKITE_@}" | sort -u); do
+  [[ -n "${!var:-}" ]] && run_args+=("-e" "$var=${!var}")
+done
 
 # Provide an environment variable file
 if [[ -n $(plugin_read_config ENVIRONMENT_FILE) ]] ; then
