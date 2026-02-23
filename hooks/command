@@ -111,7 +111,7 @@ if [[ -z "$vm_agent_path" ]]; then
   fi
   echo "--- :anka: buildkite-agent not in VM; copying from host ($host_agent_path) to /usr/local/bin" >&2
   # shellcheck disable=SC2086
-  plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" sudo mkdir -p /usr/local/bin
+  plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" bash -c 'sudo mkdir -p /usr/local/bin && sudo chmod 755 /usr/local/bin'
   # shellcheck disable=SC2086
   plugin_prompt_and_run anka $ANKA_DEBUG cp -a "$host_agent_path" "${job_image_name}:/usr/local/bin/buildkite-agent"
 fi
