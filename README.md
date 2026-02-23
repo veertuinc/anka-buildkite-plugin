@@ -5,7 +5,7 @@ A [Buildkite plugin](https://buildkite.com/docs/agent/v3/plugins) for running pi
 - You need to ensure your Anka Nodes (host machines running Anka software) have the Buildkite agent installed and show under your Agents listing inside of Buildkite.
 - The plugin will create a cloned VM to run instructions in and will delete the VM on pipeline status `cancellation`, `failure`, or `success`.
 - The plugin executes `buildkite-agent bootstrap` inside of the cloned VM during the `command` hook.
-- Your guest VM image must include `buildkite-agent` in its `PATH`.
+- If `buildkite-agent` is not in the VM's `PATH`, the plugin copies it from the host into `/usr/local/bin`.
 - A lock file (`/tmp/anka-buildkite-plugin-lock`) is created around pull and cloning. This prevents collision/ram state corruption when you're running two different jobs and pulling two different tags on the same anka node. The error you'd see otherwise is `state_lib/b026f71c-7675-11e9-8883-f01898ec0a5d.ank: failed to open image, error 2`
 
 ## Bootstrap Execution
@@ -231,25 +231,3 @@ Example: `32`
 Will stop the VM, set the MAC address, and then execute commands you've specified.
 
 Example: `00:1B:44:11:3A:B7`
-
-## License
-
-|                      |                                          |
-|:---------------------|:-----------------------------------------|
-| **Author:**          | Tom Duffield (<tom@chef.io>)
-| **Copyright:**       | Copyright 2018-2026, Chef Software, Inc.
-| **License:**         | Apache License, Version 2.0
-
-```text
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-```

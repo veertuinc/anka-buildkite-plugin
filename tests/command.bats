@@ -28,6 +28,7 @@ teardown() {
 
 @test "Run buildkite-agent bootstrap in VM" {
   stub anka \
+    "run $JOB_IMAGE bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
     "run $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'"
 
   run $PWD/hooks/command
@@ -40,6 +41,7 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_INHERIT_ENVIRONMENT_VARS="true"
 
   stub anka \
+    "run --env $JOB_IMAGE bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
     "run --env $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'"
 
   run $PWD/hooks/command
@@ -54,6 +56,7 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_ENVIRONMENT_FILE="./env-file"
 
   stub anka \
+    "run --env-file ./env-file $JOB_IMAGE bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
     "run --env-file ./env-file $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'"
 
   run $PWD/hooks/command
@@ -68,6 +71,7 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_WAIT_TIME="true"
 
   stub anka \
+    "run $JOB_IMAGE bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
     "run $JOB_IMAGE sleep 10 : echo 'waited'" \
     "run $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'"
 
@@ -84,6 +88,7 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_WAIT_TIME="15"
 
   stub anka \
+    "run $JOB_IMAGE bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
     "run $JOB_IMAGE sleep 15 : echo 'waited 15s'" \
     "run $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'"
 
@@ -102,6 +107,7 @@ teardown() {
 
   stub anka \
     "cp -a ./.cache $JOB_IMAGE:/private/var/tmp/cache : echo 'copied into vm'" \
+    "run $JOB_IMAGE bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
     "run $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'"
 
   run $PWD/hooks/command
@@ -119,6 +125,7 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_COPY_OUT_HOST_PATH="./.cache"
 
   stub anka \
+    "run $JOB_IMAGE bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
     "run $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'" \
     "cp -a $JOB_IMAGE:/private/var/tmp/cache ./.cache : echo 'copied out of vm'"
 
@@ -137,6 +144,7 @@ teardown() {
   export BUILDKITE_PLUGIN_ANKA_COPY_OUT_HOST_PATH="./.cache"
 
   stub anka \
+    "run $JOB_IMAGE bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
     "run $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'bootstrap failed'; exit 1" \
     "cp -a $JOB_IMAGE:/private/var/tmp/cache ./.cache : echo 'copied out of vm'"
 
@@ -148,6 +156,27 @@ teardown() {
 
   unset BUILDKITE_PLUGIN_ANKA_COPY_OUT_VM_PATH
   unset BUILDKITE_PLUGIN_ANKA_COPY_OUT_HOST_PATH
+}
+
+@test "Copy buildkite-agent from host when not in VM" {
+  fake_agent_dir="$(mktemp -d)"
+  touch "${fake_agent_dir}/buildkite-agent"
+  chmod +x "${fake_agent_dir}/buildkite-agent"
+  export PATH="${fake_agent_dir}:${PATH}"
+
+  stub anka \
+    "run $JOB_IMAGE bash -c 'command -v buildkite-agent' : exit 1" \
+    "cp -a ${fake_agent_dir}/buildkite-agent $JOB_IMAGE:/usr/local/bin/buildkite-agent : echo 'copied agent'" \
+    "run $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'"
+
+  run $PWD/hooks/command
+
+  assert_success
+  assert_output --partial "copying from host"
+  assert_output --partial "copied agent"
+  assert_output --partial "ran bootstrap in anka"
+
+  rm -rf "${fake_agent_dir}"
 }
 
 @test "Require both copy-in options" {
