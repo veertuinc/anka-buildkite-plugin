@@ -101,6 +101,7 @@ fi
 # Ensure buildkite-agent exists in VM; if not, copy from host to /usr/local/bin
 set +e
 # shellcheck disable=SC2086
+plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" bash -c 'command -v buildkite-agent'
 vm_agent_path=$(anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" bash -c 'command -v buildkite-agent' 2>/dev/null)
 set -e
 echo "vm_agent_path: $vm_agent_path" >&2
