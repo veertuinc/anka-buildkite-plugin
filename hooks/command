@@ -106,10 +106,10 @@ set -e
 if [[ -z "$vm_agent_path" ]]; then
   host_agent_path="$(command -v buildkite-agent 2>/dev/null || true)"
   if [[ -z "$host_agent_path" ]] || [[ ! -f "$host_agent_path" ]]; then
-    echo "buildkite-agent not found on host (checked PATH); cannot copy into VM."
+    echo "buildkite-agent not found on host (checked PATH); cannot copy into VM." >&2
     exit 1
   fi
-  echo "--- :anka: buildkite-agent not in VM; copying from host ($host_agent_path) to /usr/local/bin"
+  echo "--- :anka: buildkite-agent not in VM; copying from host ($host_agent_path) to /usr/local/bin" >&2
   # shellcheck disable=SC2086
   plugin_prompt_and_run anka $ANKA_DEBUG cp -a "$host_agent_path" "${job_image_name}:/usr/local/bin/buildkite-agent"
 fi
