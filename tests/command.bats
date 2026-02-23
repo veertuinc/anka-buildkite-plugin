@@ -166,7 +166,7 @@ teardown() {
 
   stub anka \
     "run $JOB_IMAGE bash -c 'command -v buildkite-agent' : exit 1" \
-    "run $JOB_IMAGE mkdir -p /usr/local/bin : echo 'mkdir ok'" \
+    "run $JOB_IMAGE bash -c 'if [ ! -d /usr/local/bin ]; then sudo mkdir -p /usr/local/bin && sudo chown \"\$(whoami)\" /usr/local/bin; fi' : echo 'mkdir ok'" \
     "cp -a ${fake_agent_dir}/buildkite-agent $JOB_IMAGE:/usr/local/bin/buildkite-agent : echo 'copied agent'" \
     "run $JOB_IMAGE buildkite-agent bootstrap --job UUID --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'"
 
