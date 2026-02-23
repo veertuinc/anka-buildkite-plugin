@@ -6,8 +6,8 @@ steps:
       hostname
       pwd
       ls -la
-    agents:
-      queue: mac-anka
+    # agents:
+    #   queue: mac-anka
     plugins:
       - veertuinc/anka#v2.0.0:
           vm-name: macos-base
