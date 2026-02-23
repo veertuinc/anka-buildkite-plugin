@@ -1,3 +1,5 @@
+env:
+  BUILDKITE_AGENT_DEBUG: true
 steps:
   - label: ":anka: TESTING"
     command: |
