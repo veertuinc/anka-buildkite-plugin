@@ -17,12 +17,17 @@ trap cleanup_on_cancel SIGTERM SIGINT
 
 run_args=()
 
-# Pass only BUILDKITE_* vars (VM keeps its default HOME; no host env leak)
-for var in $(printf '%s\n' "${!BUILDKITE_@}" | sort -u); do
-  [[ -n "${!var:-}" ]] && run_args+=("-e" "$var=${!var}")
-done
+# Use the agent's env file when available (avoids long -e arg lists and printf errors).
+# Fallback to BUILDKITE_* vars when env file is not set (e.g. tests).
+if [[ -n "${BUILDKITE_ENV_FILE:-}" && -f "${BUILDKITE_ENV_FILE}" ]]; then
+  run_args+=("--env-file" "$BUILDKITE_ENV_FILE")
+else
+  for var in $(printf '%s\n' "${!BUILDKITE_@}" | sort -u); do
+    [[ -n "${!var:-}" ]] && run_args+=("-e" "$var=${!var}")
+  done
+fi
 
-# Provide an environment variable file
+# Provide additional environment variables from plugin config
 if [[ -n $(plugin_read_config ENVIRONMENT_FILE) ]] ; then
   run_args+=("--env-file" "$(plugin_read_config ENVIRONMENT_FILE)")
 fi

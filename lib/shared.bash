@@ -4,7 +4,13 @@
 function plugin_prompt_and_run() {
   if [[ $(plugin_read_config DEBUG "false") =~ (true|on|1) ]] ; then
     echo -ne '\033[90m$\033[0m' >&2
-    printf " %q" "$@" >&2
+    # Avoid printf write error with many args (e.g. dozens of -e VAR=value)
+    if [[ $# -gt 20 ]]; then
+      printf " %q" "${@:1:5}" >&2
+      printf " ... (%d args) %q %q" $# "${@: -2:1}" "${@: -1}" >&2
+    else
+      printf " %q" "$@" >&2
+    fi
     echo >&2
   fi
   "$@"
