@@ -46,6 +46,25 @@ function in_array() {
   return 1
 }
 
+# Clean up job VM (delete or suspend) and lock file. Safe to call from trap or pre-exit.
+# Requires: job_image_name, BUILDKITE_JOB_ID, plugin_read_config, plugin_prompt_and_run, ANKA_DEBUG
+function cleanup_job_vm() {
+  [[ -z "${job_image_name:-}" ]] && return 0
+  lock_file disable
+  # shellcheck disable=SC2091
+  if $(plugin_read_config CLEANUP true); then
+    echo "--- :anka: Cleaning up clone (cancellation or exit)" >&2
+    # shellcheck disable=SC2086
+    anka $ANKA_DEBUG delete --yes "$job_image_name" 2>/dev/null || true
+    echo "$job_image_name has been deleted" >&2
+  else
+    echo "--- :anka: Suspending clone (cancellation or exit)" >&2
+    # shellcheck disable=SC2086
+    anka $ANKA_DEBUG suspend "$job_image_name" 2>/dev/null || true
+    echo "$job_image_name has been suspended" >&2
+  fi
+}
+
 function lock_file() {
   [[ -z "${1}" ]] && echo "lock_file function requires a single argument" && exit 1
   LOCK_FILE="/tmp/anka-buildkite-plugin-lock"

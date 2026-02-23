@@ -8,6 +8,13 @@ DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 job_image_name="$(plugin_read_config VM_NAME)-${BUILDKITE_JOB_ID}"
 
+# Clean up VM on cancellation (SIGTERM) so it is not orphaned when the agent kills the process
+cleanup_on_cancel() {
+  cleanup_job_vm
+  exit 143
+}
+trap cleanup_on_cancel SIGTERM SIGINT
+
 run_args=()
 
 # Bootstrap requires BUILDKITE_AGENT_ACCESS_TOKEN and other agent env; always pass host env.
