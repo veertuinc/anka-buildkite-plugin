@@ -1,0 +1,44 @@
+steps:
+  - label: "anka-testing"
+    key: "anka-testing"
+    commands:
+      - env
+      - whoami
+      - hostname
+      - pwd
+      - ls -la
+      - mkdir -p /tmp/buildkite-cache
+      - touch /tmp/buildkite-cache/test1
+    # agents:
+    #   queue: mac-anka
+    plugins:
+      - veertuinc/anka#dev:
+          vm-name: 26.3-arm64
+          copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
+          copy-in-vm-path: "/tmp/buildkite-cache"
+          copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
+          copy-out-vm-path: "/tmp/buildkite-cache"
+          debug: true
+          anka-debug: true
+
+  - label: "anka-testing2"
+    key: "anka-testing2"
+    depends_on:
+      - "anka-testing"
+    commands: |
+      env;
+      whoami;
+      hostname;
+      pwd;
+      ls -la;
+      [[ -f /tmp/buildkite-cache/test1 ]] && echo "test1 exists" || echo "test1 does not exist";
+      touch /tmp/buildkite-cache/test2;
+    plugins:
+      - veertuinc/anka#dev:
+          vm-name: 26.3-arm64
+          copy-in-vm-path: "/tmp/buildkite-cache"
+          copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/anka-testing"
+          copy-out-vm-path: "/tmp/buildkite-cache"
+          copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
+          debug: true
+          anka-debug: true

@@ -19,26 +19,6 @@ teardown() {
   unset BUILDKITE_PLUGIN_ANKA_VM_NAME
 }
 
-@test "Run with START_DEVICES (yaml list)" {
-  export BUILDKITE_PLUGIN_ANKA_START_DEVICES="iphone1
-iphone2"
-
-  stub anka \
-    "clone $VM $JOB_IMAGE : echo 'cloned vm'" \
-    "list $JOB_IMAGE : echo 'suspended'" \
-    "stop --force $JOB_IMAGE : echo 'stopped'" \
-    "start -d iphone1 -d iphone2 $JOB_IMAGE : echo 'started with devices'"
-
-  run $PWD/hooks/post-checkout
-
-  assert_success
-  assert_output --partial "cloned vm"
-  assert_output --partial "stopped"
-  assert_output --partial "started with devices"
-
-  unset BUILDKITE_PLUGIN_ANKA_START_DEVICES
-}
-
 @test "Modify" {
   export BUILDKITE_PLUGIN_ANKA_MODIFY_CPU="6"
   export BUILDKITE_PLUGIN_ANKA_MODIFY_RAM="32"

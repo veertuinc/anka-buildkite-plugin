@@ -4,7 +4,13 @@
 function plugin_prompt_and_run() {
   if [[ $(plugin_read_config DEBUG "false") =~ (true|on|1) ]] ; then
     echo -ne '\033[90m$\033[0m' >&2
-    printf " %q" "$@" >&2
+    # Avoid printf write error with many args (e.g. dozens of -e VAR=value)
+    if [[ $# -gt 20 ]]; then
+      printf " %q" "${@:1:5}" >&2
+      printf " ... (%d args) %q %q" $# "${@: -2:1}" "${@: -1}" >&2
+    else
+      printf " %q" "$@" >&2
+    fi
     echo >&2
   fi
   "$@"
@@ -15,6 +21,25 @@ function plugin_read_config() {
   local var="BUILDKITE_PLUGIN_ANKA_${1}"
   local default="${2:-}"
   echo "${!var:-$default}"
+}
+
+# Expands ${VAR} and :placeholder: in a string. Buildkite interpolates plugin config
+# when creating jobs; step-specific vars (e.g. BUILDKITE_STEP_KEY) may be unset then.
+# Use :step_key: and :agent_id: for values Buildkite may not interpolate correctly.
+function expand_env_in_path() {
+  local s="$1"
+  local var val
+  for var in $(printf '%s\n' "${!BUILDKITE_@}" | sort -u); do
+    [[ -n "${!var:-}" ]] || continue
+    val="${!var}"
+    val="${val//\\/\\\\}"
+    val="${val//&/\\&}"
+    s="${s//\$\{$var\}/$val}"
+  done
+  # Plugin placeholders (Buildkite won't interpolate these)
+  [[ -n "${BUILDKITE_STEP_KEY:-}" ]] && s="${s//:step_key:/${BUILDKITE_STEP_KEY}}"
+  [[ -n "${BUILDKITE_AGENT_ID:-}" ]] && s="${s//:agent_id:/${BUILDKITE_AGENT_ID}}"
+  printf '%s' "$s"
 }
 
 # Reads either a value or a list from plugin config
@@ -46,6 +71,25 @@ function in_array() {
   return 1
 }
 
+# Clean up job VM (delete or suspend) and lock file. Safe to call from trap or pre-exit.
+# Requires: job_image_name, BUILDKITE_JOB_ID, plugin_read_config, plugin_prompt_and_run, ANKA_DEBUG
+function cleanup_job_vm() {
+  [[ -z "${job_image_name:-}" ]] && return 0
+  lock_file disable
+  # shellcheck disable=SC2091
+  if $(plugin_read_config CLEANUP true); then
+    echo "--- :anka: Cleaning up clone (cancellation or exit)" >&2
+    # shellcheck disable=SC2086
+    anka $ANKA_DEBUG delete --yes "$job_image_name" 2>/dev/null || true
+    echo "$job_image_name has been deleted" >&2
+  else
+    echo "--- :anka: Suspending clone (cancellation or exit)" >&2
+    # shellcheck disable=SC2086
+    anka $ANKA_DEBUG suspend "$job_image_name" 2>/dev/null || true
+    echo "$job_image_name has been suspended" >&2
+  fi
+}
+
 function lock_file() {
   [[ -z "${1}" ]] && echo "lock_file function requires a single argument" && exit 1
   LOCK_FILE="/tmp/anka-buildkite-plugin-lock"
@@ -74,17 +118,6 @@ function lock_file() {
 # Anka --debug
 export BUILDKITE_PLUGIN_ANKA_ANKA_DEBUG=$(plugin_read_config ANKA_DEBUG false)
 "$BUILDKITE_PLUGIN_ANKA_ANKA_DEBUG" && export ANKA_DEBUG="--debug" || export ANKA_DEBUG=
-
-########################################################
-# Sleep (useful for networking related issues in the VM)
-export BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_SLEEP=$(plugin_read_config PRE_EXECUTE_SLEEP false)
-[[ "$BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_SLEEP" != "false" ]] && export PRE_EXECUTE_SLEEP="sleep $BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_SLEEP; " || export PRE_EXECUTE_SLEEP=
-
-########################################################
-# while-Sleep (useful for networking init issues; similar to the PRE_EXECUTE_SLEEP)
-export BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_PING_SLEEP=$(plugin_read_config PRE_EXECUTE_PING_SLEEP)
-export PRE_EXECUTE_PING_SLEEP=
-[[ -n "$BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_PING_SLEEP" ]] && export PRE_EXECUTE_PING_SLEEP="while ! ping -c1 $BUILDKITE_PLUGIN_ANKA_PRE_EXECUTE_PING_SLEEP | grep -v '\---'; do sleep 1; done;"
 
 ###################
 # Registry Failover
