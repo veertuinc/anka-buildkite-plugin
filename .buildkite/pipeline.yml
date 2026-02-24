@@ -1,5 +1,5 @@
 steps:
-  - label: ":anka: TESTING"
+  - label: "anka-testing"
     commands:
       - env
       - whoami
@@ -20,9 +20,9 @@ steps:
           debug: true
           anka-debug: true
 
-  - label: ":anka: TESTING2"
+  - label: "anka-testing2"
     depends_on:
-      - ":anka: TESTING"
+      - "anka-testing"
     commands: |
       env;
       whoami;
