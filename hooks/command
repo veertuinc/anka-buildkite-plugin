@@ -50,6 +50,11 @@ copy_in_vm_path="$(expand_env_in_path "$(plugin_read_config COPY_IN_VM_PATH)")"
 copy_out_vm_path="$(expand_env_in_path "$(plugin_read_config COPY_OUT_VM_PATH)")"
 copy_out_host_path="$(expand_env_in_path "$(plugin_read_config COPY_OUT_HOST_PATH)")"
 
+echo "copy_in_host_path: $copy_in_host_path" >&2
+echo "copy_in_vm_path: $copy_in_vm_path" >&2
+echo "copy_out_vm_path: $copy_out_vm_path" >&2
+echo "copy_out_host_path: $copy_out_host_path" >&2
+
 if [[ -n "$copy_in_host_path" && -z "$copy_in_vm_path" ]] || [[ -z "$copy_in_host_path" && -n "$copy_in_vm_path" ]]; then
   echo "Both copy-in-host-path and copy-in-vm-path are required together."
   exit 1

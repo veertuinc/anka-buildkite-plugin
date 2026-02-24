@@ -140,7 +140,7 @@ steps:
           copy-out-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/${BUILDKITE_STEP_KEY}
 ```
 
-Note: The plugin creates `copy-out-host-path` if it does not exist. Copy-out copies the *contents* of the VM path into the host path (not the folder itself). Paths support `${BUILDKITE_*}` variable expansion (e.g. `${BUILDKITE_STEP_KEY}`, `${BUILDKITE_AGENT_ID}`); expansion runs when the plugin executes, so step-specific vars like `BUILDKITE_STEP_KEY` work correctly.
+Note: The plugin creates `copy-out-host-path` if it does not exist. Copy-out copies the *contents* of the VM path into the host path (not the folder itself). Paths support `${BUILDKITE_*}` variable expansion (e.g. `${BUILDKITE_STEP_KEY}`, `${BUILDKITE_LABEL}`, `${BUILDKITE_AGENT_ID}`); expansion runs when the plugin executes, so step-specific vars like `BUILDKITE_STEP_KEY` work correctly.
 
 ### `wait-time` (optional)
 
