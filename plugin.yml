@@ -13,13 +13,7 @@ configuration:
       type: string
     always-pull:
       type: string
-    inherit-environment-vars:
-      type: boolean
     environment-file:
-      type: string
-    no-volume:
-      type: boolean
-    volume:
       type: string
     wait-time:
       type: [boolean, integer]

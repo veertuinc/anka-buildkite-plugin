@@ -2,20 +2,15 @@
 
 A [Buildkite plugin](https://buildkite.com/docs/agent/v3/plugins) for running pipeline steps in [Anka](https://docs.veertu.com/anka/what-is-anka/) virtual machines.
 
+The plugin will create a cloned VM to run commands inside of and will then delete the VM on pipeline status `cancellation`, `failure`, or `success`.
+
+You do not need to install the Buildkite agent in the VM, the plugin will do that for you using the host's Buildkite agent.
+
+## Prerequisites
+
 - You need to ensure your Anka Nodes (host machines running Anka software) have the Buildkite agent installed and show under your Agents listing inside of Buildkite.
-- The plugin will create a cloned VM to run instructions in and will delete the VM on pipeline status `cancellation`, `failure`, or `success`.
-- The plugin executes `buildkite-agent bootstrap` inside of the cloned VM during the `command` hook.
-- If `buildkite-agent` is not in the VM's `PATH`, the plugin copies it from the host into `/usr/local/bin`.
-- A lock file (`/tmp/anka-buildkite-plugin-lock`) is created around pull and cloning. This prevents collision/ram state corruption when you're running two different jobs and pulling two different tags on the same anka node. The error you'd see otherwise is `state_lib/b026f71c-7675-11e9-8883-f01898ec0a5d.ank: failed to open image, error 2`
+- You need to [install the Anka CLI](https://docs.veertu.com/anka/anka-virtualization-cli/getting-started/installing-the-anka-virtualization-package/) on your host machines.
 
-## Bootstrap Execution
-
-The plugin now runs the Buildkite bootstrap process in the VM (`buildkite-agent bootstrap`) instead of evaluating `BUILDKITE_COMMAND` line-by-line through `bash -c`.
-
-- Buildkite bootstrap reference: <https://buildkite.com/docs/agent/cli/reference/bootstrap#running-the-bootstrap-usage>
-- The agent's job environment (`BUILDKITE_ENV_FILE`) is always passed into the VM; users cannot change this.
-- Use `environment-file` if you need additional environment values available in the guest VM runtime.
-- Use `copy-in-*` and `copy-out-*` options for explicit host/guest directory sync (for example, build cache round trips).
 
 ## Anka VM [Template & Tag](https://docs.veertu.com/anka/anka-virtualization-cli/getting-started/creating-vms/#vm-clones) Requirements
 
@@ -25,12 +20,30 @@ The plugin now runs the Buildkite bootstrap process in the VM (`buildkite-agent 
 
 ```yml
 steps:
-  - command: make test
-    agents: "queue=mac-anka-large-node-fleet"
+  - label: "Build"
+    key: "build"
+    command: make build
     plugins:
-      - veertuinc/anka#v1.0.0:
-          vm-name: macos-base
+      - veertuinc/anka#v2.0.0:
+          vm-name: 26.3-arm64
+          copy-out-vm-path: /tmp/buildkite-cache
+          copy-out-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}
+
+  - label: "Test"
+    key: "test"
+    command: make test
+    depends_on:
+      - "build"
+    plugins:
+      - veertuinc/anka#v2.0.0:
+          vm-name: 26.3-arm64
+          copy-in-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}
+          copy-in-vm-path: /tmp/buildkite-cache
+          copy-out-vm-path: /tmp/buildkite-cache
+          copy-out-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}
 ```
+
+This example runs two steps in sequence. The first step builds and copies `/tmp/buildkite-cache` from the VM to the host. The second step copies that cache into the VM, runs tests, and copies the updated cache back. Use `key` on steps when using `depends_on`.
 
 ## Hook Steps
 
@@ -84,7 +97,7 @@ Host path to copy into the VM before `buildkite-agent bootstrap` runs.
 
 Must be used together with `copy-in-vm-path`.
 
-Example: `./.build-cache`
+Example: `/tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/${BUILDKITE_STEP_KEY}`
 
 ### `copy-in-vm-path` (optional)
 
@@ -92,7 +105,7 @@ Destination path in the VM for `copy-in-host-path`.
 
 Must be used together with `copy-in-host-path`.
 
-Example: `/private/var/tmp/cache`
+Example: `/tmp/buildkite-cache`
 
 ### `copy-out-vm-path` (optional)
 
@@ -100,7 +113,7 @@ VM path to copy back to the host after `buildkite-agent bootstrap` exits.
 
 Must be used together with `copy-out-host-path`.
 
-Example: `/private/var/tmp/cache`
+Example: `/tmp/buildkite-cache`
 
 ### `copy-out-host-path` (optional)
 
@@ -108,39 +121,35 @@ Host destination for `copy-out-vm-path`.
 
 Must be used together with `copy-out-vm-path`.
 
-Example: `./.build-cache`
+Example: `/tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/${BUILDKITE_STEP_KEY}`
 
 ### Copy Round-Trip Example
 
 ```yml
 steps:
   - command: make test
-    agents: "queue=mac-anka-large-node-fleet"
+    agents:
+      queue: mac-anka
     plugins:
       - veertuinc/anka#v2.0.0:
-         vm-name: macos-base
-         copy-in-host-path: ./.build-cache
-         copy-in-vm-path: /private/var/tmp/cache
-         copy-out-vm-path: /private/var/tmp/cache
-         copy-out-host-path: ./.build-cache
+          vm-name: 26.3-arm64
+          copy-in-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/${BUILDKITE_STEP_KEY}
+          copy-in-vm-path: /tmp/buildkite-cache
+          copy-out-vm-path: /tmp/buildkite-cache
+          copy-out-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/${BUILDKITE_STEP_KEY}
 ```
 
-### Deprecated and Removed Options
-
-The following options were removed as part of moving execution to full in-VM bootstrap:
-
-- `workdir`
-- `workdir-create`
-- `bash-interactive`
-- `pre-execute-sleep`
-- `pre-execute-ping-sleep`
-- `wait-network`
+Note: The plugin creates `copy-out-host-path` if it does not exist. Copy-out copies the *contents* of the VM path into the host path (not the folder itself).
 
 ### `wait-time` (optional)
 
-The `anka run` CLI has no `--wait-time` option. When enabled, the plugin runs `sleep` inside the VM before bootstrap to allow sntp to update the system time. Use `true` for a 10-second default, or an integer for custom seconds.
+When enabled, the plugin runs `sleep` inside the VM before bootstrap to allow sntp to update the system time. Use `true` for a 10-second default, or an integer for custom seconds.
 
 Example: `true` or `15`
+
+### Deprecated and Removed Options
+
+The following options were removed in v2.0.0: `workdir`, `workdir-create`, `bash-interactive`, `pre-execute-sleep`, `pre-execute-ping-sleep`, `wait-network`, `volume`, `no-volume`.
 
 ### `debug` (optional)
 
@@ -170,13 +179,14 @@ Commands to run on the HOST machine BEFORE any guest/anka run commands. Useful i
 ```yml
 steps:
   - command: make test
-    agents: "queue=mac-anka-large-node-fleet"
+    agents:
+      queue: mac-anka
     plugins:
-      - veertuinc/anka#v0.8.0:
+      - veertuinc/anka#v2.0.0:
           vm-name: macos-base
           pre-commands:
             - 'echo 123 && echo 456'
-            - 'buildkite-agent artifact download "build.tar.gz" . --step ":aws: Amazon Linux 1 Build"'
+            - 'buildkite-agent artifact download "build.tar.gz" . --step "build"'
             - 'echo \\$variableOnTheHost'
 ```
 
@@ -195,9 +205,10 @@ Should the default registry not be available, the failover registries you specif
 ```yml
 steps:
   - command: make test
-    agents: "queue=mac-anka-large-node-fleet"
+    agents:
+      queue: mac-anka
     plugins:
-      - veertuinc/anka#v0.8.0:
+      - veertuinc/anka#v2.0.0:
           vm-name: macos-base
           failover-registries:
             - 'registry_1'
@@ -226,3 +237,11 @@ Example: `32`
 Will stop the VM, set the MAC address, and then execute commands you've specified.
 
 Example: `00:1B:44:11:3A:B7`
+
+
+## Notes
+
+- The plugin executes `buildkite-agent bootstrap` inside of the cloned VM during the `command` hook.
+- If `buildkite-agent` is not in the VM's `PATH`, the plugin copies it from the host into `/usr/local/bin`. If it already exists in the VM, it will not be copied again.
+- A lock file (`/tmp/anka-buildkite-plugin-lock`) is created around pull and cloning. This prevents collision/ram state corruption when you're running two different jobs and pulling two different tags on the same anka node. The error you'd see otherwise is `state_lib/b026f71c-7675-11e9-8883-f01898ec0a5d.ank: failed to open image, error 2`
+
