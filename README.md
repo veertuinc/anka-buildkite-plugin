@@ -58,27 +58,27 @@ Hook | Description
 
 ## Step Configuration
 
-| Option | Required | Description | Example |
-|--------|----------|-------------|---------|
-| `vm-name` | Yes | Anka VM Template to use as the base. The plugin creates a step-specific clone prior to execution. | `macos-base` |
-| `vm-registry-tag` | No | Tag for the VM Template to pull from the Anka Cloud Registry. | `latest` |
-| `vm-registry-version` | No | Version number for the VM Template in the Anka Registry. | `1` |
-| `always-pull` | No | Pull the VM Template before cloning. Use `true` or `"shrink"` to remove other local tags. Registry failures do not fail the build. | `true` |
-| `environment-file` | No | Path to a file with additional environment variables to inject into the VM. The agent's job environment is always passed. | `./my-env.txt` |
-| `copy-in-host-path` | No | Host path to copy into the VM before bootstrap. Use `:step_key:` and `:agent_id:` placeholders. Copy-in is skipped if the path does not exist. Requires `copy-in-vm-path`. | `"/tmp/buildkite-cache/:agent_id:/:step_key:"` |
-| `copy-in-vm-path` | No | Destination path in the VM for `copy-in-host-path`. Requires `copy-in-host-path`. | `/tmp/buildkite-cache` |
-| `copy-out-vm-path` | No | VM path to copy back to the host after bootstrap. Requires `copy-out-host-path`. | `/tmp/buildkite-cache` |
-| `copy-out-host-path` | No | Host destination for `copy-out-vm-path`. Use `:step_key:` and `:agent_id:` placeholders. Copy-out copies *contents* (not the folder). Created if missing. Requires `copy-out-vm-path`. | `"/tmp/buildkite-cache/:agent_id:/:step_key:"` |
-| `wait-time` | No | Run `sleep` inside the VM before bootstrap for sntp time sync. Use `true` for 10s default, or an integer for custom seconds. | `true` or `15` |
-| `debug` | No | Enable debug output within the plugin. | `true` |
-| `anka-debug` | No | Enable `anka --debug` output when running anka commands. | `true` |
-| `cleanup` | No | Set to `false` to leave cloned images for investigation. Use `cancel-grace-period=60` on the agent. | `false` |
-| `pre-commands` | No | **(DANGEROUS)** Commands to run on the HOST before guest commands. E.g. download artifacts. Double-escape variables. | YAML list |
-| `post-commands` | No | **(DANGEROUS)** Commands to run on the HOST after guest commands. E.g. upload artifacts. VM names are `${vm_name}-${BUILDKITE_JOB_ID}`. | YAML list |
-| `failover-registries` | No | List of registries to try if the default is unavailable. Uses the first available. | `['registry_1', 'registry_2']` |
-| `modify-cpu` | No | Stop VM, set CPU cores, then run commands. | `6` |
-| `modify-ram` | No | Stop VM, set memory (G), then run commands. | `32` |
-| `modify-mac` | No | Stop VM, set MAC address, then run commands. | `00:1B:44:11:3A:B7` |
+| Option | Description | Example |
+|--------|-------------|---------|
+| `vm-name` | Anka VM Template to use as the base. The plugin creates a step-specific clone prior to execution. | `macos-base` |
+| `vm-registry-tag` | Tag for the VM Template to pull from the Anka Cloud Registry. | `latest` |
+| `vm-registry-version` | Version number for the VM Template in the Anka Registry. | `1` |
+| `always-pull` | Pull the VM Template before cloning. Use `true` or `"shrink"` to remove other local tags. Registry failures do not fail the build. | `true` |
+| `environment-file` | Path to a file with additional environment variables to inject into the VM. The agent's job environment is always passed. | `./my-env.txt` |
+| `copy-in-host-path` | Host path to copy into the VM before bootstrap. Use `:step_key:` and `:agent_id:` placeholders. Copy-in is skipped if the path does not exist. Must be used with `copy-in-vm-path`. | `"/tmp/buildkite-cache/:agent_id:/:step_key:"` |
+| `copy-in-vm-path` | Destination path in the VM for `copy-in-host-path`. Must be used with `copy-in-host-path`. | `/tmp/buildkite-cache` |
+| `copy-out-vm-path` | VM path to copy back to the host after bootstrap. Must be used with `copy-out-host-path`. | `/tmp/buildkite-cache` |
+| `copy-out-host-path` | Host destination for `copy-out-vm-path`. Use `:step_key:` and `:agent_id:` placeholders. Copy-out copies *contents* (not the folder). Created if missing. Must be used with `copy-out-vm-path`. | `"/tmp/buildkite-cache/:agent_id:/:step_key:"` |
+| `wait-time` | Run `sleep` inside the VM before bootstrap for sntp time sync. Use `true` for 10s default, or an integer for custom seconds. | `true` or `15` |
+| `debug` | Enable debug output within the plugin. | `true` |
+| `anka-debug` | Enable `anka --debug` output when running anka commands. | `true` |
+| `cleanup` | Set to `false` to leave cloned images for investigation. Use `cancel-grace-period=60` on the agent. | `false` |
+| `pre-commands` | **(DANGEROUS)** Commands to run on the HOST before guest commands. E.g. download artifacts. Double-escape variables. | YAML list |
+| `post-commands` | **(DANGEROUS)** Commands to run on the HOST after guest commands. E.g. upload artifacts. VM names are `${vm_name}-${BUILDKITE_JOB_ID}`. | YAML list |
+| `failover-registries` | List of registries to try if the default is unavailable. Uses the first available. | `['registry_1', 'registry_2']` |
+| `modify-cpu` | Stop VM, set CPU cores, then run commands. | `6` |
+| `modify-ram` | Stop VM, set memory (G), then run commands. | `32` |
+| `modify-mac` | Stop VM, set MAC address, then run commands. | `00:1B:44:11:3A:B7` |
 
 **Deprecated and removed (v2.0.0):** `workdir`, `workdir-create`, `bash-interactive`, `pre-execute-sleep`, `pre-execute-ping-sleep`, `wait-network`, `volume`, `no-volume`
 
