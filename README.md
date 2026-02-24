@@ -97,7 +97,7 @@ Host path to copy into the VM before `buildkite-agent bootstrap` runs. Supports 
 
 Must be used together with `copy-in-vm-path`.
 
-Example: `/tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/:step_key:`
+Example: `"/tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/:step_key:"` (quotes required for `:step_key:` in YAML)
 
 ### `copy-in-vm-path` (optional)
 
@@ -121,7 +121,7 @@ Host destination for `copy-out-vm-path`. Supports `${BUILDKITE_*}` expansion whe
 
 Must be used together with `copy-out-vm-path`.
 
-Example: `/tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/:step_key:`
+Example: `"/tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/:step_key:"` (quotes required for `:step_key:` in YAML)
 
 ### Copy Round-Trip Example
 
@@ -134,10 +134,10 @@ steps:
     plugins:
       - veertuinc/anka#v2.0.0:
           vm-name: 26.3-arm64
-          copy-in-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/:step_key:
+          copy-in-host-path: "/tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/:step_key:"
           copy-in-vm-path: /tmp/buildkite-cache
           copy-out-vm-path: /tmp/buildkite-cache
-          copy-out-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/:step_key:
+          copy-out-host-path: "/tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/:step_key:"
 ```
 
 Note: The plugin creates `copy-out-host-path` if it does not exist. Copy-out copies the *contents* of the VM path into the host path (not the folder itself). Use `:step_key:` and `:agent_id:` placeholders for step-specific paths; Buildkite pre-interpolates plugin config and may omit `${BUILDKITE_STEP_KEY}`.
