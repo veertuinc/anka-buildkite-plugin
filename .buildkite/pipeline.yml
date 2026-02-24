@@ -6,6 +6,7 @@ steps:
       - hostname
       - pwd
       - ls -la
+      - mkdir -p /tmp/buildkite-cache
       - touch /tmp/buildkite-cache/test1
     # agents:
     #   queue: mac-anka
