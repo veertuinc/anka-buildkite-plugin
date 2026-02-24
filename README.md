@@ -123,8 +123,11 @@ steps:
 ```
 
 
-## Notes
+## Development
+
+To test the plugin, go to https://buildkite.com/veertu-inc/anka-buildkite-plugin-test and create a new pipeline.
+
+Changes to the pipeline.yml may be necessary. For example, the version the plugin targets may need to be #dev and then you may need to `ln -s ~/anka-buildkite-plugin github-com-veertuinc-anka-buildkite-plugin-dev` in the plugin directory so it doesn't need to download the plugin each time and can just use your local dev repo/folder.
 
 - If `buildkite-agent` is not in the VM's `PATH`, the plugin copies it from the host into `/usr/local/bin`. If it already exists in the VM, it will not be copied again.
 - A lock file (`/tmp/anka-buildkite-plugin-lock`) is created around pull and cloning. This prevents collision/ram state corruption when you're running two different jobs and pulling two different tags on the same anka node. The error you'd see otherwise is `state_lib/b026f71c-7675-11e9-8883-f01898ec0a5d.ank: failed to open image, error 2`
-
