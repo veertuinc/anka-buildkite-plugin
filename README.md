@@ -82,6 +82,18 @@ Hook | Description
 
 **Deprecated and removed (v2.0.0):** `workdir`, `workdir-create`, `bash-interactive`, `pre-execute-sleep`, `pre-execute-ping-sleep`, `wait-network`, `volume`, `no-volume`
 
+### Copy options
+
+- **copy-in** and **copy-out** paths support `:step_key:` and `:agent_id:` placeholders. Buildkite pre-interpolates plugin config and may omit `${BUILDKITE_STEP_KEY}`; use the placeholders instead. Quotes are required for `:step_key:` in YAML (e.g. `"/tmp/cache/:agent_id:/:step_key:"`).
+- **copy-in** is skipped if the host path does not exist.
+- **copy-out** copies the *contents* of the VM path into the host path (not the folder itself). The plugin creates `copy-out-host-path` if it does not exist.
+
+### Other options
+
+- **always-pull**: If the registry is down and the pull fails, the plugin will not fail the build. Monitor for registry availability.
+- **cleanup**: When set to `false`, run the buildkite agent with `cancel-grace-period=60`; the [default 10 seconds is not enough time](https://forum.buildkite.community/t/problems-with-anka-plugin-and-pre-exit/365/7).
+- **pre-commands** / **post-commands**: Double-escape variables you don't want eval to interpolate too soon. Cloned VM names are `${vm_name}-${BUILDKITE_JOB_ID}`.
+
 ### Example: `pre-commands` and `post-commands`
 
 ```yml
