@@ -141,8 +141,9 @@ fi
 
 echo "+++ Executing buildkite-agent bootstrap in $job_image_name"
 set +e
+# script -q forces a PTY so stdout is line-buffered; prevents command output appearing under wrong section (e.g. Uploading artifacts)
 # shellcheck disable=SC2086
-plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" buildkite-agent bootstrap "${bootstrap_args[@]:+${bootstrap_args[@]}}"
+plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" script -q /dev/null buildkite-agent bootstrap "${bootstrap_args[@]:+${bootstrap_args[@]}}"
 bootstrap_exit_code=$?
 set -e
 
