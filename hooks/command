@@ -19,8 +19,15 @@ run_args=()
 
 # Use the agent's env file when available (avoids long -e arg lists and printf errors).
 # BUILDKITE_AGENT_ACCESS_TOKEN is not in the env file; pass it explicitly for artifact/meta-data.
+# Anka's --env-file parser passes values literally; it does not strip Bash-style quotes. The Buildkite
+# agent writes KEY="value" format. We must sanitize to KEY=value or the VM gets literal quotes,
+# causing buildkite-agent API calls to fail (e.g. jobs/%22019c8d47...%22 -> 404).
 if [[ -n "${BUILDKITE_ENV_FILE:-}" && -f "${BUILDKITE_ENV_FILE}" ]]; then
-  run_args+=("--env-file" "$BUILDKITE_ENV_FILE")
+  anka_env_file="$(mktemp)"
+  trap 'rm -f "${anka_env_file}"' EXIT
+  # Strip surrounding double quotes from KEY="value" -> KEY=value (anka treats quotes literally)
+  sed -E 's/^([^=]+)="(.*)"$/\1=\2/' "${BUILDKITE_ENV_FILE}" > "${anka_env_file}"
+  run_args+=("--env-file" "${anka_env_file}")
   [[ -n "${BUILDKITE_AGENT_ACCESS_TOKEN:-}" ]] && run_args+=("-e" "BUILDKITE_AGENT_ACCESS_TOKEN=${BUILDKITE_AGENT_ACCESS_TOKEN}")
 else
   for var in $(printf '%s\n' "${!BUILDKITE_@}" | sort -u); do
@@ -35,34 +42,11 @@ fi
 
 run_args+=("$job_image_name")
 
-# Debug: inspect env file and VM env (for BUILDKITE_JOB_ID quote-escaping investigation)
-if [[ $(plugin_read_config DEBUG "false") =~ (true|on|1) ]] && [[ -n "${BUILDKITE_ENV_FILE:-}" && -f "${BUILDKITE_ENV_FILE}" ]]; then
-  echo "--- :anka: [debug] Host env file first 3 lines (format check):" >&2
-  head -3 "${BUILDKITE_ENV_FILE}" 2>/dev/null | sed 's/^/  /' >&2 || true
-  echo "--- :anka: [debug] Host env file BUILDKITE_JOB_ID line (raw):" >&2
-  grep "BUILDKITE_JOB_ID" "${BUILDKITE_ENV_FILE}" 2>/dev/null | head -1 | sed 's/^/  /' >&2 || true
-  echo "--- :anka: [debug] Host BUILDKITE_JOB_ID from shell: [${BUILDKITE_JOB_ID}]" >&2
-fi
-
 # Verify VM is functional before proceeding
 # shellcheck disable=SC2086
 if ! plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" true; then
   echo "ERROR: VM ${job_image_name} is not functional; anka run true failed." >&2
   exit 1
-fi
-
-# Debug: what does BUILDKITE_JOB_ID look like inside the VM? (for quote-escaping investigation)
-# Use anka without --debug for these runs so output is readable (anka --debug dumps hundreds of lines)
-if [[ $(plugin_read_config DEBUG "false") =~ (true|on|1) ]]; then
-  echo "--- :anka: [debug] VM BUILDKITE_JOB_ID (echo):" >&2
-  # shellcheck disable=SC2086
-  anka run "${run_args[@]:+${run_args[@]}}" bash -c 'echo "[$BUILDKITE_JOB_ID]"' 2>/dev/null | sed 's/^/  /' >&2
-  echo "--- :anka: [debug] VM BUILDKITE_JOB_ID (env | grep):" >&2
-  # shellcheck disable=SC2086
-  anka run "${run_args[@]:+${run_args[@]}}" bash -c 'env | grep BUILDKITE_JOB_ID' 2>/dev/null | sed 's/^/  /' >&2
-  echo "--- :anka: [debug] VM BUILDKITE_JOB_ID (od -c to check for quote chars):" >&2
-  # shellcheck disable=SC2086
-  anka run "${run_args[@]:+${run_args[@]}}" bash -c 'printf "%s" "$BUILDKITE_JOB_ID" | od -c' 2>/dev/null | sed 's/^/  /' >&2
 fi
 
 # Wait for sntp to update VM time (anka run has no --wait-time; we sleep inside the VM)
