@@ -21,6 +21,8 @@ steps:
           anka-debug: true
 
   - label: ":anka: TESTING2"
+    depends_on:
+      - ":anka: TESTING"
     commands: |
       env;
       whoami;
