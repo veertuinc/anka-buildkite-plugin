@@ -142,7 +142,7 @@ teardown() {
     "$RUN_COPYOUT true : echo 'vm ok'" \
     "$RUN_COPYOUT bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
     "$RUN_COPYOUT script -q /dev/null buildkite-agent bootstrap --job UUID --phases checkout,command --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'ran bootstrap in anka'" \
-    "cp -a $JOB_IMAGE:/private/var/tmp/cache ./.cache : echo 'copied out of vm'"
+    "cp -a $JOB_IMAGE:/private/var/tmp/cache/. ./.cache : echo 'copied out of vm'"
 
   run $PWD/hooks/command
 
@@ -163,7 +163,7 @@ teardown() {
     "$RUN_COPYOUT true : echo 'vm ok'" \
     "$RUN_COPYOUT bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
     "$RUN_COPYOUT script -q /dev/null buildkite-agent bootstrap --job UUID --phases checkout,command --command 'command \"a string\"' --repository git@github.com:org/repo.git --commit abc123 : echo 'bootstrap failed'; exit 1" \
-    "cp -a $JOB_IMAGE:/private/var/tmp/cache ./.cache : echo 'copied out of vm'"
+    "cp -a $JOB_IMAGE:/private/var/tmp/cache/. ./.cache : echo 'copied out of vm'"
 
   run $PWD/hooks/command
 
