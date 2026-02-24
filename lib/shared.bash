@@ -23,9 +23,9 @@ function plugin_read_config() {
   echo "${!var:-$default}"
 }
 
-# Expands ${VAR} in a string using the current environment. Buildkite interpolates
-# plugin config when creating jobs; step-specific vars (e.g. BUILDKITE_STEP_KEY)
-# may be unset then. This runs when the plugin executes, when all vars are available.
+# Expands ${VAR} and :placeholder: in a string. Buildkite interpolates plugin config
+# when creating jobs; step-specific vars (e.g. BUILDKITE_STEP_KEY) may be unset then.
+# Use :step_key: and :agent_id: for values Buildkite may not interpolate correctly.
 function expand_env_in_path() {
   local s="$1"
   local var val
@@ -36,6 +36,9 @@ function expand_env_in_path() {
     val="${val//&/\\&}"
     s="${s//\$\{$var\}/$val}"
   done
+  # Plugin placeholders (Buildkite won't interpolate these)
+  [[ -n "${BUILDKITE_STEP_KEY:-}" ]] && s="${s//:step_key:/${BUILDKITE_STEP_KEY}}"
+  [[ -n "${BUILDKITE_AGENT_ID:-}" ]] && s="${s//:agent_id:/${BUILDKITE_AGENT_ID}}"
   printf '%s' "$s"
 }
 

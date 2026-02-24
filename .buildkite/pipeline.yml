@@ -17,7 +17,7 @@ steps:
           # copy-in-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}
           # copy-in-vm-path: /tmp/buildkite-cache
           copy-out-vm-path: /tmp/buildkite-cache
-          copy-out-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/${BUILDKITE_STEP_KEY}
+          copy-out-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/:step_key:
           debug: true
           anka-debug: true
 
@@ -36,9 +36,9 @@ steps:
     plugins:
       - veertuinc/anka#dev:
           vm-name: 26.3-arm64
-          copy-in-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/${BUILDKITE_STEP_KEY}
+          copy-in-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/:step_key:
           copy-in-vm-path: /tmp/buildkite-cache
           copy-out-vm-path: /tmp/buildkite-cache
-          copy-out-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/${BUILDKITE_STEP_KEY}
+          copy-out-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/:step_key:
           debug: true
           anka-debug: true
