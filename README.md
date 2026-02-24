@@ -221,7 +221,6 @@ Example: `00:1B:44:11:3A:B7`
 
 ## Notes
 
-- The plugin executes `buildkite-agent bootstrap` inside of the cloned VM during the `command` hook.
 - If `buildkite-agent` is not in the VM's `PATH`, the plugin copies it from the host into `/usr/local/bin`. If it already exists in the VM, it will not be copied again.
 - A lock file (`/tmp/anka-buildkite-plugin-lock`) is created around pull and cloning. This prevents collision/ram state corruption when you're running two different jobs and pulling two different tags on the same anka node. The error you'd see otherwise is `state_lib/b026f71c-7675-11e9-8883-f01898ec0a5d.ank: failed to open image, error 2`
 
