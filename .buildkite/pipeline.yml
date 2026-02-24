@@ -1,12 +1,12 @@
 steps:
   - label: ":anka: TESTING"
-    command: |
-      env
-      whoami
-      hostname
-      pwd
-      ls -la
-      mkdir -p /tmp/buildkite-cache/test1
+    commands:
+      - env
+      - whoami
+      - hostname
+      - pwd
+      - ls -la
+      - mkdir -p /tmp/buildkite-cache/test1
     # agents:
     #   queue: mac-anka
     plugins:
