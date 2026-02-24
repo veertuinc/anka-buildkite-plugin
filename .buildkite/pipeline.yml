@@ -12,7 +12,7 @@ steps:
     # agents:
     #   queue: mac-anka
     plugins:
-      - veertuinc/anka#dev:
+      - veertuinc/anka#v2.0.0:
           vm-name: 26.3-arm64
           copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
           copy-in-vm-path: "/tmp/buildkite-cache"
@@ -34,7 +34,7 @@ steps:
       [[ -f /tmp/buildkite-cache/test1 ]] && echo "test1 exists" || echo "test1 does not exist";
       touch /tmp/buildkite-cache/test2;
     plugins:
-      - veertuinc/anka#dev:
+      - veertuinc/anka#v2.0.0:
           vm-name: 26.3-arm64
           copy-in-vm-path: "/tmp/buildkite-cache"
           copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/anka-testing"
