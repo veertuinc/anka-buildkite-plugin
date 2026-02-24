@@ -93,7 +93,7 @@ Example: `./my-env.txt`
 
 ### `copy-in-host-path` (optional)
 
-Host path to copy into the VM before `buildkite-agent bootstrap` runs.
+Host path to copy into the VM before `buildkite-agent bootstrap` runs. Supports `${BUILDKITE_*}` variable expansion (e.g. `${BUILDKITE_STEP_KEY}`, `${BUILDKITE_AGENT_ID}`).
 
 Must be used together with `copy-in-vm-path`.
 
@@ -117,7 +117,7 @@ Example: `/tmp/buildkite-cache`
 
 ### `copy-out-host-path` (optional)
 
-Host destination for `copy-out-vm-path`.
+Host destination for `copy-out-vm-path`. Supports `${BUILDKITE_*}` variable expansion (e.g. `${BUILDKITE_STEP_KEY}`, `${BUILDKITE_AGENT_ID}`).
 
 Must be used together with `copy-out-vm-path`.
 
@@ -140,7 +140,7 @@ steps:
           copy-out-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/${BUILDKITE_STEP_KEY}
 ```
 
-Note: The plugin creates `copy-out-host-path` if it does not exist. Copy-out copies the *contents* of the VM path into the host path (not the folder itself).
+Note: The plugin creates `copy-out-host-path` if it does not exist. Copy-out copies the *contents* of the VM path into the host path (not the folder itself). Paths support `${BUILDKITE_*}` variable expansion (e.g. `${BUILDKITE_STEP_KEY}`, `${BUILDKITE_AGENT_ID}`); expansion runs when the plugin executes, so step-specific vars like `BUILDKITE_STEP_KEY` work correctly.
 
 ### `wait-time` (optional)
 

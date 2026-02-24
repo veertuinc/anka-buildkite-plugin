@@ -23,6 +23,22 @@ function plugin_read_config() {
   echo "${!var:-$default}"
 }
 
+# Expands ${VAR} in a string using the current environment. Buildkite interpolates
+# plugin config when creating jobs; step-specific vars (e.g. BUILDKITE_STEP_KEY)
+# may be unset then. This runs when the plugin executes, when all vars are available.
+function expand_env_in_path() {
+  local s="$1"
+  local var val
+  for var in $(printf '%s\n' "${!BUILDKITE_@}" | sort -u); do
+    [[ -n "${!var:-}" ]] || continue
+    val="${!var}"
+    val="${val//\\/\\\\}"
+    val="${val//&/\\&}"
+    s="${s//\$\{$var\}/$val}"
+  done
+  printf '%s' "$s"
+}
+
 # Reads either a value or a list from plugin config
 function plugin_read_list() {
   prefix_read_list "BUILDKITE_PLUGIN_ANKA_$1"
