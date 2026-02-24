@@ -61,9 +61,13 @@ if [[ -n "$copy_out_vm_path" && -z "$copy_out_host_path" ]] || [[ -z "$copy_out_
 fi
 
 if [[ -n "$copy_in_host_path" ]]; then
-  echo "--- :anka: Copying ${copy_in_host_path} to ${job_image_name}:${copy_in_vm_path}"
-  # shellcheck disable=SC2086
-  plugin_prompt_and_run anka $ANKA_DEBUG cp -a "$copy_in_host_path" "${job_image_name}:${copy_in_vm_path}"
+  if [[ -d "$copy_in_host_path" ]]; then
+    echo "--- :anka: Copying ${copy_in_host_path} to ${job_image_name}:${copy_in_vm_path}"
+    # shellcheck disable=SC2086
+    plugin_prompt_and_run anka $ANKA_DEBUG cp -a "$copy_in_host_path" "${job_image_name}:${copy_in_vm_path}"
+  else
+    echo "--- :anka: Skipping copy-in (${copy_in_host_path} does not exist on host)"
+  fi
 fi
 
 if [[ -z "${BUILDKITE_JOB_ID:-}" ]]; then

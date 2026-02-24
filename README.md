@@ -21,38 +21,40 @@ You do not need to install the Buildkite agent in the VM, the plugin will do tha
 ```yml
 steps:
   - label: "Build"
-    key: "build"
+    key: "build-key"
     command: make build
     plugins:
       - veertuinc/anka#v2.0.0:
           vm-name: 26.3-arm64
-          copy-out-vm-path: /tmp/buildkite-cache
-          copy-out-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}
+          copy-out-vm-path: "/tmp/buildkite-cache"
+          copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
 
   - label: "Test"
-    key: "test"
+    key: "test-key"
     command: make test
     depends_on:
-      - "build"
+      - "build-key"
     plugins:
       - veertuinc/anka#v2.0.0:
           vm-name: 26.3-arm64
-          copy-in-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}
-          copy-in-vm-path: /tmp/buildkite-cache
-          copy-out-vm-path: /tmp/buildkite-cache
-          copy-out-host-path: /tmp/buildkite-cache/${BUILDKITE_AGENT_ID}
+          copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/build-key"
+          copy-in-vm-path: "/tmp/buildkite-cache"
+          copy-out-vm-path: "/tmp/buildkite-cache"
+          copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/test-key"
 ```
 
-This example runs two steps in sequence. The first step builds and copies `/tmp/buildkite-cache` from the VM to the host. The second step copies that cache into the VM, runs tests, and copies the updated cache back. Use `key` on steps when using `depends_on`.
+This example runs two steps in sequence. The first step builds and copies `/tmp/buildkite-cache` from the VM to the host. The second step copies that cache from build-key into the VM (if it exists), runs tests, and copies the updated cache back for subsequent steps.
+
+Note: Use `key` on steps when using `depends_on`.
 
 ## Hook Steps
 
 Hook | Description
 --- | ---
-`pre-checkout` | Download the specified virtual machine from your registry (if applicable).
-`post-checkout` | Clone the virtual machine and perform any hardware modifications.
+`pre-checkout` | Download the specified virtual machine template from your registry (if applicable).
+`post-checkout` | Clone the virtual machine template to a temporary step-specific VM and perform any modifications to the VM (e.g. CPU, RAM, MAC address).
 `pre-command` | Run any of your `pre-commands` (see below).
-`command` | Run `buildkite-agent bootstrap` inside of the cloned virtual machine.
+`command` | Start the cloned virtual machine, copy any files from the host to the VM, and then run `buildkite-agent bootstrap` inside. After, copy any files from the VM to the host.
 `post-command` | Run any of your `post-commands` (see below).
 `pre-exit` | Perform any clean up steps
 
@@ -93,7 +95,7 @@ Example: `./my-env.txt`
 
 ### `copy-in-host-path` (optional)
 
-Host path to copy into the VM before `buildkite-agent bootstrap` runs. Supports `${BUILDKITE_*}` expansion where Buildkite interpolates (e.g. `${BUILDKITE_AGENT_ID}`). For step-specific values, use `:step_key:` or `:agent_id:` placeholders (Buildkite pre-interpolates plugin config and may omit step vars).
+Host path to copy into the VM before `buildkite-agent bootstrap` runs. Supports `${BUILDKITE_*}` expansion where Buildkite interpolates (e.g. `${BUILDKITE_AGENT_ID}`). For step-specific values, use `:step_key:` or `:agent_id:` placeholders (Buildkite pre-interpolates plugin config and may omit step vars). Copy-in is skipped if the path does not exist on the host.
 
 Must be used together with `copy-in-vm-path`.
 
@@ -134,10 +136,10 @@ steps:
     plugins:
       - veertuinc/anka#v2.0.0:
           vm-name: 26.3-arm64
-          copy-in-host-path: "/tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/:step_key:"
+          copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
           copy-in-vm-path: /tmp/buildkite-cache
           copy-out-vm-path: /tmp/buildkite-cache
-          copy-out-host-path: "/tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/:step_key:"
+          copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
 ```
 
 Note: The plugin creates `copy-out-host-path` if it does not exist. Copy-out copies the *contents* of the VM path into the host path (not the folder itself). Use `:step_key:` and `:agent_id:` placeholders for step-specific paths; Buildkite pre-interpolates plugin config and may omit `${BUILDKITE_STEP_KEY}`.
