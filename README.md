@@ -128,6 +128,7 @@ Example: `/tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/${BUILDKITE_STEP_KEY}`
 ```yml
 steps:
   - command: make test
+    key: "project1-test"
     agents:
       queue: mac-anka
     plugins:
