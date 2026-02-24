@@ -36,7 +36,7 @@ steps:
     plugins:
       - veertuinc/anka#dev:
           vm-name: 26.3-arm64
-          copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
+          copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/anka-testing"
           copy-in-vm-path: /tmp/buildkite-cache
           copy-out-vm-path: /tmp/buildkite-cache
           copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
