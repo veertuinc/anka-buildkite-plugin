@@ -52,16 +52,17 @@ if ! plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}"
 fi
 
 # Debug: what does BUILDKITE_JOB_ID look like inside the VM? (for quote-escaping investigation)
+# Use anka without --debug for these runs so output is readable (anka --debug dumps hundreds of lines)
 if [[ $(plugin_read_config DEBUG "false") =~ (true|on|1) ]]; then
   echo "--- :anka: [debug] VM BUILDKITE_JOB_ID (echo):" >&2
   # shellcheck disable=SC2086
-  anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" bash -c 'echo "[$BUILDKITE_JOB_ID]"' 2>&1 | sed 's/^/  /' >&2
+  anka run "${run_args[@]:+${run_args[@]}}" bash -c 'echo "[$BUILDKITE_JOB_ID]"' 2>/dev/null | sed 's/^/  /' >&2
   echo "--- :anka: [debug] VM BUILDKITE_JOB_ID (env | grep):" >&2
   # shellcheck disable=SC2086
-  anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" bash -c 'env | grep BUILDKITE_JOB_ID' 2>&1 | sed 's/^/  /' >&2
+  anka run "${run_args[@]:+${run_args[@]}}" bash -c 'env | grep BUILDKITE_JOB_ID' 2>/dev/null | sed 's/^/  /' >&2
   echo "--- :anka: [debug] VM BUILDKITE_JOB_ID (od -c to check for quote chars):" >&2
   # shellcheck disable=SC2086
-  anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" bash -c 'printf "%s" "$BUILDKITE_JOB_ID" | od -c' 2>&1 | sed 's/^/  /' >&2
+  anka run "${run_args[@]:+${run_args[@]}}" bash -c 'printf "%s" "$BUILDKITE_JOB_ID" | od -c' 2>/dev/null | sed 's/^/  /' >&2
 fi
 
 # Wait for sntp to update VM time (anka run has no --wait-time; we sleep inside the VM)
