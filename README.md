@@ -12,10 +12,6 @@ You do not need to install the Buildkite agent in the VM, the plugin will do tha
 - You need to [install the Anka CLI](https://docs.veertu.com/anka/anka-virtualization-cli/getting-started/installing-the-anka-virtualization-package/) on your host machines.
 
 
-## Anka VM [Template & Tag](https://docs.veertu.com/anka/anka-virtualization-cli/getting-started/creating-vms/#vm-clones) Requirements
-
-1. In the VM, make sure remote login is enabled (`System Settings > General > Sharing`).
-
 ## Pipeline Step Definition Example
 
 ```yml
@@ -60,7 +56,7 @@ Hook | Description
 `post-command` | Run any of your `post-commands` (see below).
 `pre-exit` | Perform any clean up steps
 
-## Configuration
+## Step Configuration
 
 ### `vm-name` (required)
 
@@ -127,23 +123,6 @@ Must be used together with `copy-out-vm-path`.
 
 Example: `"/tmp/buildkite-cache/${BUILDKITE_AGENT_ID}/:step_key:"` (quotes required for `:step_key:` in YAML)
 
-### Copy Round-Trip Example
-
-```yml
-steps:
-  - command: make test
-    key: "project1-test"
-    agents:
-      queue: mac-anka
-    plugins:
-      - veertuinc/anka#v2.0.0:
-          vm-name: 26.3-arm64
-          copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
-          copy-in-vm-path: /tmp/buildkite-cache
-          copy-out-vm-path: /tmp/buildkite-cache
-          copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
-```
-
 Note: The plugin creates `copy-out-host-path` if it does not exist. Copy-out copies the *contents* of the VM path into the host path (not the folder itself). Use `:step_key:` and `:agent_id:` placeholders for step-specific paths; Buildkite pre-interpolates plugin config and may omit `${BUILDKITE_STEP_KEY}`.
 
 ### `wait-time` (optional)
@@ -184,8 +163,6 @@ Commands to run on the HOST machine BEFORE any guest/anka run commands. Useful i
 ```yml
 steps:
   - command: make test
-    agents:
-      queue: mac-anka
     plugins:
       - veertuinc/anka#v2.0.0:
           vm-name: macos-base
@@ -210,8 +187,6 @@ Should the default registry not be available, the failover registries you specif
 ```yml
 steps:
   - command: make test
-    agents:
-      queue: mac-anka
     plugins:
       - veertuinc/anka#v2.0.0:
           vm-name: macos-base
