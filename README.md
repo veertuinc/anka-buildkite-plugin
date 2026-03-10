@@ -65,6 +65,7 @@ Hook | Description
 | `vm-registry-version` | Version number for the VM Template in the Anka Registry. | `1` |
 | `always-pull` | Pull the VM Template before cloning. Use `true` or `"shrink"` to remove other local tags. Registry failures do not fail the build. | `true` |
 | `environment-file` | Path to a file with additional environment variables to inject into the VM. The agent's job environment is always passed. | `./my-env.txt` |
+| `mount-host-path` | Mount a host path to the VM. | `"${BUILDKITE_BUILD_PATH}` or `"/tmp/buildkite-cache"` |
 | `copy-in-host-path` | Host path to copy into the VM before bootstrap. Use `:step_key:` and `:agent_id:` placeholders. Copy-in is skipped if the path does not exist. Must be used with `copy-in-vm-path`. | `"/tmp/buildkite-cache/:agent_id:/:step_key:"` |
 | `copy-in-vm-path` | Destination path in the VM for `copy-in-host-path`. Must be used with `copy-in-host-path`. | `/tmp/buildkite-cache` |
 | `copy-out-vm-path` | VM path to copy back to the host after bootstrap. Must be used with `copy-out-host-path`. | `/tmp/buildkite-cache` |

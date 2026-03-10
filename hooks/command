@@ -151,6 +151,13 @@ if [[ -z "$vm_agent_path" ]]; then
   plugin_prompt_and_run anka $ANKA_DEBUG cp -a "$host_agent_path" "${job_image_name}:/usr/local/bin/"
 fi
 
+# Mount the build path to the VM
+if [[ -n "$(plugin_read_config MOUNT_HOST_PATH)" ]]; then
+  echo "--- :anka: Mounting $(plugin_read_config MOUNT_HOST_PATH) into the VM as $(anka config guest_mount_path)/buildkite"
+  # shellcheck disable=SC2086
+  plugin_prompt_and_run anka $ANKA_DEBUG modify $job_image_name mount "$(plugin_read_config MOUNT_HOST_PATH)":buildkite
+fi
+
 echo "+++ Executing buildkite-agent bootstrap in $job_image_name"
 set +e
 # script -q forces a PTY so stdout is line-buffered; prevents command output appearing under wrong section (e.g. Uploading artifacts)
