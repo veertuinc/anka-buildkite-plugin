@@ -50,3 +50,10 @@ if [[ -n "${BUILDKITE_PLUGIN_ANKA_MODIFY_MAC}" ]]; then
   # shellcheck disable=SC2086
   plugin_prompt_and_run anka modify $job_image_name set network-card --mac ${BUILDKITE_PLUGIN_ANKA_MODIFY_MAC}
 fi
+
+# Mount the build path to the VM
+if [[ -n "$(plugin_read_config MOUNT_HOST_PATH)" ]]; then
+  echo "--- :anka: Mounting $(plugin_read_config MOUNT_HOST_PATH) into the VM as $(anka config guest_mount_path)/buildkite"
+  # shellcheck disable=SC2086
+  plugin_prompt_and_run anka $ANKA_DEBUG modify $job_image_name mount "$(plugin_read_config MOUNT_HOST_PATH)":buildkite
+fi
