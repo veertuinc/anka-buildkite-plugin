@@ -109,10 +109,12 @@ add_bootstrap_arg_if_set "BUILDKITE_COMMAND" "--command"
 # add_bootstrap_arg_if_set "BUILDKITE_PIPELINE_PROVIDER" "--pipeline-provider"
 # add_bootstrap_arg_if_set "BUILDKITE_ARTIFACT_PATHS" "--artifact-upload-paths"
 # add_bootstrap_arg_if_set "BUILDKITE_ARTIFACT_UPLOAD_DESTINATION" "--artifact-upload-destination"
-add_bootstrap_arg_if_set "BUILDKITE_BUILD_PATH" "--build-path"
+# add_bootstrap_arg_if_set "BUILDKITE_BUILD_PATH" "--build-path"
 # add_bootstrap_arg_if_set "BUILDKITE_HOOKS_PATH" "--hooks-path"
 # add_bootstrap_arg_if_set "BUILDKITE_ADDITIONAL_HOOKS_PATHS" "--additional-hooks-paths"
 # add_bootstrap_arg_if_set "BUILDKITE_PLUGINS_PATH" "--plugins-path"
+
+bootstrap_args+=("--build-path" "build")
 
 # anka run has no --wait-time; when wait-time is enabled, sleep in the VM for sntp to sync
 if [[ -n "$wait_time_seconds" ]] && [[ "$wait_time_seconds" =~ ^(true|on|1)$ ]]; then
