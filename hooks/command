@@ -114,8 +114,11 @@ add_bootstrap_arg_if_set "BUILDKITE_COMMAND" "--command"
 # add_bootstrap_arg_if_set "BUILDKITE_ADDITIONAL_HOOKS_PATHS" "--additional-hooks-paths"
 # add_bootstrap_arg_if_set "BUILDKITE_PLUGINS_PATH" "--plugins-path"
 
-#TODO: support changing this in the plugin config
-bootstrap_args+=("--build-path" "build")
+if [[ -n "$(plugin_read_config MOUNT_HOST_PATH)" && -n "$(plugin_read_config GUEST_BUILD_PATH)" ]]; then
+  bootstrap_args+=("--build-path" "$(plugin_read_config GUEST_BUILD_PATH)")
+else
+  bootstrap_args+=("--build-path" "build")
+fi
 
 # anka run has no --wait-time; when wait-time is enabled, sleep in the VM for sntp to sync
 if [[ -n "$wait_time_seconds" ]] && [[ "$wait_time_seconds" =~ ^(true|on|1)$ ]]; then
