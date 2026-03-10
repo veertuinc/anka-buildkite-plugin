@@ -7,12 +7,14 @@ steps:
       - hostname
       - pwd
       - ls -la
-      - ls -laht "/Volumes/host/buildkite/"
       - df -h
+      - ls -laht "/Volumes/host/buildkite/"
       # - mkdir -p /tmp/buildkite-cache
       # - touch /tmp/buildkite-cache/test1
     # agents:
     #   queue: mac-anka
+    env:
+      BUILDKITE_BUILD_PATH: "/Volumes/host/buildkite/build1"
     plugins:
       - veertuinc/anka#mounting:
           vm-name: 26.3-arm64
