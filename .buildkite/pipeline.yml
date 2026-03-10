@@ -7,17 +7,19 @@ steps:
       - hostname
       - pwd
       - ls -la
-      - mkdir -p /tmp/buildkite-cache
-      - touch /tmp/buildkite-cache/test1
+      - ls -laht "/Volumes/host/buildkite/"
+      - df -h
+      # - mkdir -p /tmp/buildkite-cache
+      # - touch /tmp/buildkite-cache/test1
     # agents:
     #   queue: mac-anka
     plugins:
       - veertuinc/anka#v2.0.0:
           vm-name: 26.3-arm64
-          copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
-          copy-in-vm-path: "/tmp/buildkite-cache"
-          copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
-          copy-out-vm-path: "/tmp/buildkite-cache"
+          # copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
+          # copy-in-vm-path: "/tmp/buildkite-cache"
+          # copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
+          # copy-out-vm-path: "/tmp/buildkite-cache"
           debug: true
           anka-debug: true
           mount-host-path: "${BUILDKITE_BUILD_PATH}"
