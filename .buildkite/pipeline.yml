@@ -13,6 +13,8 @@ steps:
       # - touch /tmp/buildkite-cache/test1
     # agents:
     #   queue: mac-anka
+    env:
+      BUILDKITE_BUILD_PATH: "/Volumes/host/buildkite/build1"
     plugins:
       - veertuinc/anka#mounting:
           vm-name: 26.3-arm64
