@@ -9,13 +9,13 @@ steps:
       - pwd
       - ls -la
       - df -h
-      - ls -laht "/Volumes/host/buildkite/"
+      - ls -laht "/Volumes/buildkite/"
       # - mkdir -p /tmp/buildkite-cache
       # - touch /tmp/buildkite-cache/test1
     # agents:
     #   queue: mac-anka
     env:
-      BUILDKITE_BUILD_PATH: "/Volumes/host/buildkite/build1"
+      BUILDKITE_BUILD_PATH: "/Volumes/buildkite/build1"
     plugins:
       - veertuinc/anka#mounting:
           vm-name: 26.3-arm64
