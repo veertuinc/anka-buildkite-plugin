@@ -1,15 +1,16 @@
 steps:
   - label: "anka-testing"
     key: "anka-testing"
-    commands:
-      - cat /var/log/anka-mount.log
-      - env
-      - whoami
-      - hostname
-      - pwd
-      - ls -la
-      - df -h
-      - ls -laht "/Volumes/buildkite/"
+    commands: |
+      set -x
+      cat /var/log/anka-mount.log
+      env
+      whoami
+      hostname
+      pwd
+      ls -la
+      df -h
+      ls -laht "/Volumes/buildkite/"
       # - mkdir -p /tmp/buildkite-cache
       # - touch /tmp/buildkite-cache/test1
     # agents:
