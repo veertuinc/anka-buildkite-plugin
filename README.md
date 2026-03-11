@@ -10,7 +10,7 @@ You do not need to install the Buildkite agent in the VM, the plugin will do tha
 
 - You need to ensure your Anka Nodes (host machines running Anka software) have the Buildkite agent installed and show under your Agents listing inside of Buildkite.
 - You need to [install the Anka CLI](https://docs.veertu.com/anka/anka-virtualization-cli/getting-started/installing-the-anka-virtualization-package/) on your host machines.
-
+- EC2 Mac users: You must launch your agents with `no-pty=true` in the agent config in order for licensing as a non-root user to function for anka CLI commands.
 
 ## Pipeline Step Definition Example
 
