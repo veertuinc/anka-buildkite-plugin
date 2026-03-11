@@ -2,7 +2,6 @@ steps:
   - label: "anka-testing"
     key: "anka-testing"
     commands:
-      - sleep 9999
       - cat /var/log/anka-mount.log
       - env
       - whoami
