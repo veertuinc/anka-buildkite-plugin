@@ -20,12 +20,9 @@ steps:
     key: "build-key"
     command: make build
     plugins:
-      - veertuinc/anka#v2.0.0:
+      - veertuinc/anka#main:
           vm-name: 26.3-arm64
-          copy-in-vm-path: "/tmp/buildkite-cache"
-          copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
-          copy-out-vm-path: "/tmp/buildkite-cache"
-          copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
+          mount-host-path: "${BUILDKITE_BUILD_PATH}"
 
   - label: "Test"
     key: "test-key"
@@ -33,15 +30,11 @@ steps:
     depends_on:
       - "build-key"
     plugins:
-      - veertuinc/anka#v2.0.0:
+      - veertuinc/anka#main:
           vm-name: 26.3-arm64
-          copy-in-vm-path: "/tmp/buildkite-cache"
-          copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/build-key"
-          copy-out-vm-path: "/tmp/buildkite-cache"
-          copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/test-key"
 ```
 
-This example runs two steps in sequence. The first step builds and copies `/tmp/buildkite-cache` from the VM to the host. The second step copies that cache from build-key into the VM (if it exists), runs tests, and copies the updated cache back for subsequent steps.
+This example runs two steps in sequence. The first step builds and mounts the build path from the host to the VM (with cached files). The second step runs the tests.
 
 Note: Use `key` on steps when using `depends_on`.
 
@@ -65,7 +58,7 @@ Hook | Description
 | `vm-registry-version` | Version number for the VM Template in the Anka Registry. | `1` |
 | `always-pull` | Pull the VM Template before cloning. Use `true` or `"shrink"` to remove other local tags. Registry failures do not fail the build. | `true` |
 | `environment-file` | Path to a file with additional environment variables to inject into the VM. The agent's job environment is always passed. | `./my-env.txt` |
-| `mount-host-path` | Mount a host path to the VM. | `"${BUILDKITE_BUILD_PATH}` or `"/tmp/buildkite-cache"` |
+| `mount-host-path` | Mount a host path to the VM. | `"${BUILDKITE_BUILD_PATH}` or `"/tmp/buildkite-cache"`, or anything else you want to mount |
 | `copy-in-host-path` | Host path to copy into the VM before bootstrap. Use `:step_key:` and `:agent_id:` placeholders. Copy-in is skipped if the path does not exist. Must be used with `copy-in-vm-path`. | `"/tmp/buildkite-cache/:agent_id:/:step_key:"` |
 | `copy-in-vm-path` | Destination path in the VM for `copy-in-host-path`. Must be used with `copy-in-host-path`. | `/tmp/buildkite-cache` |
 | `copy-out-vm-path` | VM path to copy back to the host after bootstrap. Must be used with `copy-out-host-path`. | `/tmp/buildkite-cache` |
