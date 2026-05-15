@@ -121,6 +121,21 @@ steps:
 
 ## Development
 
+
+### Testing
+
+```bash
+make lint
+make shellcheck
+make bats
+```
+
+#### On your MacOS host machine
+
+1. Install the buildkite-agent on your macos host machine.
+2. Install the anka CLI on your macos host machine.
+3. Run the plugin tests by running `bats tests/*.bats`.
+
 To test the plugin, go to https://buildkite.com/veertu-inc/anka-buildkite-plugin-test and create a new pipeline.
 
 Changes to the pipeline.yml may be necessary. For example, the version the plugin targets may need to be #dev and then you may need to `ln -s ~/anka-buildkite-plugin github-com-veertuinc-anka-buildkite-plugin-dev` in the plugin directory so it doesn't need to download the plugin each time and can just use your local dev repo/folder.

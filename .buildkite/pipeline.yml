@@ -2,7 +2,16 @@ steps:
   - label: "anka-testing"
     key: "anka-testing"
     commands: |
+      set -euo pipefail
       set -x
+      anka_vm_mounted_host_share_path="/Volumes/My Shared Files/buildkite"
+      required_file_relative_to_mount="${ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT:?ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT must be set}"
+      required_file_path_inside_anka_vm="${anka_vm_mounted_host_share_path}/${required_file_relative_to_mount}"
+      if [[ ! -f "${required_file_path_inside_anka_vm}" ]]; then
+        echo "FATAL: Mount verification failed: expected file is missing inside the Anka VM at ${required_file_path_inside_anka_vm}" >&2
+        echo "On the Buildkite host, ensure this file exists under ${BUILDKITE_BUILD_PATH}/${required_file_relative_to_mount} (same content is shared into the guest)." >&2
+        exit 1
+      fi
       cat /var/log/anka-mount.log
       env
       whoami
@@ -17,9 +26,11 @@ steps:
     #   queue: mac-anka
     env:
       BUILDKITE_BUILD_PATH: "/Volumes/buildkite/build1"
+      # Host path is ${BUILDKITE_BUILD_PATH}/${ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT}; guest sees it under /Volumes/My Shared Files/buildkite/
+      ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT: ".anka-mount-verification"
     plugins:
       - veertuinc/anka#mounting:
-          vm-name: 26.3-arm64
+          vm-name: 26.4.1-arm64
           # copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
           # copy-in-vm-path: "/tmp/buildkite-cache"
           # copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
