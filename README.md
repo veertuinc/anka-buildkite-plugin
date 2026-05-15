@@ -22,6 +22,7 @@ steps:
     plugins:
       - veertuinc/anka#main:
           vm-name: 26.3-arm64
+          # Mounts the agent’s builds root into the VM (see “Host directory mounts” below).
           mount-host-path: "${BUILDKITE_BUILD_PATH}"
 
   - label: "Test"
@@ -32,9 +33,11 @@ steps:
     plugins:
       - veertuinc/anka#main:
           vm-name: 26.3-arm64
+          # Repeat mount-host-path on every step that runs inside the VM; clones are per job.
+          mount-host-path: "${BUILDKITE_BUILD_PATH}"
 ```
 
-This example runs two steps in sequence. The first step builds and mounts the build path from the host to the VM (with cached files). The second step runs the tests.
+The first step runs the build with the host directory shared into the guest. The second runs tests in a **new** VM clone, so it needs the same `mount-host-path` (and options like `mount-guest-folder-name` / `guest-build-path`) if the tests rely on that share.
 
 Note: Use `key` on steps when using `depends_on`.
 
@@ -58,7 +61,7 @@ Hook | Description
 | `vm-registry-version` | Version number for the VM Template in the Anka Registry. | `1` |
 | `always-pull` | Pull the VM Template before cloning. Use `true` or `"shrink"` to remove other local tags. Registry failures do not fail the build. | `true` |
 | `environment-file` | Path to a file with additional environment variables to inject into the VM. The agent's job environment is always passed. | `./my-env.txt` |
-| `mount-host-path` | Share a host directory into the VM ([Anka 3.9.0+](https://docs.veertu.com/anka/whats-new/anka-3.9.0/#ability-to-mount-host-directories-inside-of-the-vm); Apple silicon hosts only). Uses `anka modify … mount host_path[:guest_folder_name]`; guest path is always under `/Volumes/My Shared Files/`. | `"${BUILDKITE_BUILD_PATH}` or `"/tmp/buildkite-cache"` |
+| `mount-host-path` | Share a host directory into the VM ([Anka 3.9.0+](https://docs.veertu.com/anka/whats-new/anka-3.9.0/#ability-to-mount-host-directories-inside-of-the-vm); Apple silicon hosts only). The plugin runs `anka modify … mount host_path[:guest_folder_name]` in **post-checkout**; the guest sees the share under `/Volumes/My Shared Files/<mount-guest-folder-name>`. Paths may include `${BUILDKITE_*}` placeholders; the plugin expands these from the job environment. | `"${BUILDKITE_BUILD_PATH}"` or `"/tmp/buildkite-cache"` |
 | `mount-guest-folder-name` | Guest folder name under `/Volumes/My Shared Files/` (CLI `guest_folder_name`; default `buildkite`). | `buildkite` |
 | `guest-build-path` | Overrides `buildkite-agent bootstrap --build-path` when using `mount-host-path`. Defaults to `/Volumes/My Shared Files/<mount-guest-folder-name>`. | `/Volumes/My Shared Files/buildkite` |
 | `copy-in-host-path` | Host path to copy into the VM before bootstrap. Use `:step_key:` and `:agent_id:` placeholders. Copy-in is skipped if the path does not exist. Must be used with `copy-in-vm-path`. | `"/tmp/buildkite-cache/:agent_id:/:step_key:"` |
@@ -77,6 +80,13 @@ Hook | Description
 | `modify-mac` | Stop VM, set MAC address, then run commands. | `00:1B:44:11:3A:B7` |
 
 **Deprecated and removed (v2.0.0):** `workdir`, `workdir-create`, `bash-interactive`, `pre-execute-sleep`, `pre-execute-ping-sleep`, `wait-network`, `volume`, `no-volume`
+
+### Host directory mounts
+
+- **Anka CLI** must be **3.9.0 or newer**; otherwise the plugin fails with a clear error (`anka version` is checked in **post-checkout**).
+- **`BUILDKITE_BUILD_PATH`** is defined by the Buildkite agent (host builds root, e.g. `~/.buildkite-agent/builds`). Use `"${BUILDKITE_BUILD_PATH}"` in `mount-host-path` to share that directory. **Do not try to override `BUILDKITE_BUILD_PATH` in step `env`**—Buildkite ignores it and the mount would not use your custom value. For a **different** host directory, set your own variable (e.g. `ANKA_MOUNT_HOST_PATH`) in `env` and set `mount-host-path` to `"${ANKA_MOUNT_HOST_PATH}"`.
+- With **`mount-host-path` set**, `buildkite-agent bootstrap` is run with **`--build-path`** set to `guest-build-path`, or by default **`/Volumes/My Shared Files/<mount-guest-folder-name>`**. Without **`mount-host-path`**, bootstrap uses **`--build-path build`** (relative workspace path in the VM).
+- Before bootstrap, the **command** hook runs **`anka mount <clone>`** so mount status appears in the job log.
 
 ### Copy options
 
