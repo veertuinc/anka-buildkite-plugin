@@ -113,6 +113,8 @@ teardown() {
 }
 
 @test "Copy host path into VM before bootstrap" {
+  # Host path must exist or the hook skips copy-in; skipping breaks stub order (expected cp before bootstrap checks).
+  mkdir -p ./.cache
   export BUILDKITE_PLUGIN_ANKA_COPY_IN_HOST_PATH="./.cache"
   export BUILDKITE_PLUGIN_ANKA_COPY_IN_VM_PATH="/private/var/tmp/cache"
   RUN_COPYIN="run -e * -e * -e * -e * -e * -e * -e * -e * $JOB_IMAGE"
@@ -129,6 +131,7 @@ teardown() {
   assert_output --partial "copied into vm"
   assert_output --partial "ran bootstrap in anka"
 
+  rm -rf ./.cache
   unset BUILDKITE_PLUGIN_ANKA_COPY_IN_HOST_PATH
   unset BUILDKITE_PLUGIN_ANKA_COPY_IN_VM_PATH
 }
