@@ -17,7 +17,12 @@ steps:
         echo "On the Buildkite host, ensure this file exists under $${BUILDKITE_BUILD_PATH}/$${required_file_relative_to_mount} (same content is shared into the guest)." >&2
         exit 1
       fi
-      cat /var/log/anka-mount.log
+      # Optional: only some Anka / host setups write this; the Buildkite plugin does not create it.
+      if [[ -f /var/log/anka-mount.log ]]; then
+        cat /var/log/anka-mount.log
+      else
+        echo "No /var/log/anka-mount.log (optional; not present on this VM)." >&2
+      fi
       env
       whoami
       hostname
