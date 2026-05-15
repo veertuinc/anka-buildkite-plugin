@@ -36,6 +36,9 @@ steps:
     plugins:
       - veertuinc/anka#mounting:
           vm-name: 26.4.1-arm64
+          # Host-side sentinel so the guest mount check can prove the share is visible (mkdir is a no-op if the path exists).
+          pre-commands:
+            - 'mkdir -p "$${BUILDKITE_BUILD_PATH}" && touch "$${BUILDKITE_BUILD_PATH}/$${ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT}"'
           # copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
           # copy-in-vm-path: "/tmp/buildkite-cache"
           # copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
