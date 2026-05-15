@@ -119,3 +119,69 @@ teardown() {
   unset BUILDKITE_PLUGIN_ANKA_MODIFY_CPU
   unset FORCED
 }
+
+@test "Host mount fails when Anka CLI is below 3.9.0" {
+  export BUILDKITE_PLUGIN_ANKA_MOUNT_HOST_PATH="/tmp/build-path"
+
+  stub anka \
+    "clone $VM $JOB_IMAGE : echo 'cloned vm'" \
+    "version : echo 'anka virtualization cli version 3.8.6 (build 999)'"
+
+  run $PWD/hooks/post-checkout
+
+  assert_failure
+  assert_output --partial "Host directory mounts require"
+  assert_output --partial "3.9.0"
+
+  unset BUILDKITE_PLUGIN_ANKA_MOUNT_HOST_PATH
+}
+
+@test "Host mount fails when Anka version cannot be parsed" {
+  export BUILDKITE_PLUGIN_ANKA_MOUNT_HOST_PATH="/tmp/build-path"
+
+  stub anka \
+    "clone $VM $JOB_IMAGE : echo 'cloned vm'" \
+    "version : echo 'anka cli unknown'"
+
+  run $PWD/hooks/post-checkout
+
+  assert_failure
+  assert_output --partial "Could not determine Anka CLI version"
+
+  unset BUILDKITE_PLUGIN_ANKA_MOUNT_HOST_PATH
+}
+
+@test "Host mount uses anka modify mount host_path:guest_folder and documents guest path" {
+  export BUILDKITE_PLUGIN_ANKA_MOUNT_HOST_PATH="/tmp/build-path"
+
+  stub anka \
+    "clone $VM $JOB_IMAGE : echo 'cloned vm'" \
+    "version : echo 'anka cli 3.9.0'" \
+    "modify $JOB_IMAGE mount /tmp/build-path:buildkite : echo 'mount configured'"
+
+  run $PWD/hooks/post-checkout
+
+  assert_success
+  assert_output --partial "mount configured"
+  assert_output --partial "/Volumes/My Shared Files/buildkite"
+
+  unset BUILDKITE_PLUGIN_ANKA_MOUNT_HOST_PATH
+}
+
+@test "Host mount respects mount-guest-folder-name" {
+  export BUILDKITE_PLUGIN_ANKA_MOUNT_HOST_PATH="/tmp/build-path"
+  export BUILDKITE_PLUGIN_ANKA_MOUNT_GUEST_FOLDER_NAME="customshare"
+
+  stub anka \
+    "clone $VM $JOB_IMAGE : echo 'cloned vm'" \
+    "version : echo '4.0.0'" \
+    "modify $JOB_IMAGE mount /tmp/build-path:customshare : echo 'mount configured'"
+
+  run $PWD/hooks/post-checkout
+
+  assert_success
+  assert_output --partial "/Volumes/My Shared Files/customshare"
+
+  unset BUILDKITE_PLUGIN_ANKA_MOUNT_HOST_PATH
+  unset BUILDKITE_PLUGIN_ANKA_MOUNT_GUEST_FOLDER_NAME
+}

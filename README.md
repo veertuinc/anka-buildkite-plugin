@@ -10,7 +10,7 @@ You do not need to install the Buildkite agent in the VM, the plugin will do tha
 
 - You need to ensure your Anka Nodes (host machines running Anka software) have the Buildkite agent installed and show under your Agents listing inside of Buildkite.
 - You need to [install the Anka CLI](https://docs.veertu.com/anka/anka-virtualization-cli/getting-started/installing-the-anka-virtualization-package/) on your host machines.
-
+- EC2 Mac users: You must launch your agents with `no-pty=true` in the agent config in order for licensing as a non-root user to function for anka CLI commands.
 
 ## Pipeline Step Definition Example
 
@@ -20,12 +20,9 @@ steps:
     key: "build-key"
     command: make build
     plugins:
-      - veertuinc/anka#v2.0.0:
+      - veertuinc/anka#main:
           vm-name: 26.3-arm64
-          copy-in-vm-path: "/tmp/buildkite-cache"
-          copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
-          copy-out-vm-path: "/tmp/buildkite-cache"
-          copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
+          mount-host-path: "${BUILDKITE_BUILD_PATH}"
 
   - label: "Test"
     key: "test-key"
@@ -33,15 +30,11 @@ steps:
     depends_on:
       - "build-key"
     plugins:
-      - veertuinc/anka#v2.0.0:
+      - veertuinc/anka#main:
           vm-name: 26.3-arm64
-          copy-in-vm-path: "/tmp/buildkite-cache"
-          copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/build-key"
-          copy-out-vm-path: "/tmp/buildkite-cache"
-          copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/test-key"
 ```
 
-This example runs two steps in sequence. The first step builds and copies `/tmp/buildkite-cache` from the VM to the host. The second step copies that cache from build-key into the VM (if it exists), runs tests, and copies the updated cache back for subsequent steps.
+This example runs two steps in sequence. The first step builds and mounts the build path from the host to the VM (with cached files). The second step runs the tests.
 
 Note: Use `key` on steps when using `depends_on`.
 
@@ -65,6 +58,9 @@ Hook | Description
 | `vm-registry-version` | Version number for the VM Template in the Anka Registry. | `1` |
 | `always-pull` | Pull the VM Template before cloning. Use `true` or `"shrink"` to remove other local tags. Registry failures do not fail the build. | `true` |
 | `environment-file` | Path to a file with additional environment variables to inject into the VM. The agent's job environment is always passed. | `./my-env.txt` |
+| `mount-host-path` | Share a host directory into the VM ([Anka 3.9.0+](https://docs.veertu.com/anka/whats-new/anka-3.9.0/#ability-to-mount-host-directories-inside-of-the-vm); Apple silicon hosts only). Uses `anka modify … mount host_path[:guest_folder_name]`; guest path is always under `/Volumes/My Shared Files/`. | `"${BUILDKITE_BUILD_PATH}` or `"/tmp/buildkite-cache"` |
+| `mount-guest-folder-name` | Guest folder name under `/Volumes/My Shared Files/` (CLI `guest_folder_name`; default `buildkite`). | `buildkite` |
+| `guest-build-path` | Overrides `buildkite-agent bootstrap --build-path` when using `mount-host-path`. Defaults to `/Volumes/My Shared Files/<mount-guest-folder-name>`. | `/Volumes/My Shared Files/buildkite` |
 | `copy-in-host-path` | Host path to copy into the VM before bootstrap. Use `:step_key:` and `:agent_id:` placeholders. Copy-in is skipped if the path does not exist. Must be used with `copy-in-vm-path`. | `"/tmp/buildkite-cache/:agent_id:/:step_key:"` |
 | `copy-in-vm-path` | Destination path in the VM for `copy-in-host-path`. Must be used with `copy-in-host-path`. | `/tmp/buildkite-cache` |
 | `copy-out-vm-path` | VM path to copy back to the host after bootstrap. Must be used with `copy-out-host-path`. | `/tmp/buildkite-cache` |
@@ -125,9 +121,20 @@ steps:
 
 ## Development
 
-To test the plugin, go to https://buildkite.com/veertu-inc/anka-buildkite-plugin-test and create a new pipeline.
 
-Changes to the pipeline.yml may be necessary. For example, the version the plugin targets may need to be #dev and then you may need to `ln -s ~/anka-buildkite-plugin github-com-veertuinc-anka-buildkite-plugin-dev` in the plugin directory so it doesn't need to download the plugin each time and can just use your local dev repo/folder.
+### Testing
 
-- If `buildkite-agent` is not in the VM's `PATH`, the plugin copies it from the host into `/usr/local/bin`. If it already exists in the VM, it will not be copied again.
-- A lock file (`/tmp/anka-buildkite-plugin-lock`) is created around pull and cloning. This prevents collision/ram state corruption when you're running two different jobs and pulling two different tags on the same anka node. The error you'd see otherwise is `state_lib/b026f71c-7675-11e9-8883-f01898ec0a5d.ank: failed to open image, error 2`
+```bash
+make lint
+make shellcheck
+make bats
+```
+
+#### A real pipeline
+
+1. Install the buildkite-agent on your macos host machine.
+2. Install the anka CLI on your macos host machine.
+3. Start the buildkite agent on your macos host machine.
+4. Go to https://buildkite.com/veertu-inc/anka-buildkite-plugin-test and you'll see your branch.
+5. Add the proper test changes to pipeline.yml and commit.
+6. Run the pipeline and you'll see the test results.

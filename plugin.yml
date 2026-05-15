@@ -17,6 +17,12 @@ configuration:
       type: string
     wait-time:
       type: [boolean, integer]
+    mount-host-path:
+      type: string
+    mount-guest-folder-name:
+      type: string
+    guest-build-path:
+      type: string
     copy-in-host-path:
       type: string
     copy-in-vm-path:

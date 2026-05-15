@@ -95,24 +95,34 @@ add_bootstrap_arg_if_set() {
 }
 
 add_bootstrap_arg_if_set "BUILDKITE_COMMAND" "--command"
-add_bootstrap_arg_if_set "BUILDKITE_REPO" "--repository"
-add_bootstrap_arg_if_set "BUILDKITE_COMMIT" "--commit"
-add_bootstrap_arg_if_set "BUILDKITE_BRANCH" "--branch"
-add_bootstrap_arg_if_set "BUILDKITE_TAG" "--tag"
-add_bootstrap_arg_if_set "BUILDKITE_REFSPEC" "--refspec"
-add_bootstrap_arg_if_set "BUILDKITE_PLUGINS" "--plugins"
-add_bootstrap_arg_if_set "BUILDKITE_PULL_REQUEST" "--pullrequest"
-add_bootstrap_arg_if_set "BUILDKITE_AGENT_NAME" "--agent"
-add_bootstrap_arg_if_set "BUILDKITE_AGENT_META_DATA_QUEUE" "--queue"
-add_bootstrap_arg_if_set "BUILDKITE_ORGANIZATION_SLUG" "--organization"
-add_bootstrap_arg_if_set "BUILDKITE_PIPELINE_SLUG" "--pipeline"
-add_bootstrap_arg_if_set "BUILDKITE_PIPELINE_PROVIDER" "--pipeline-provider"
-add_bootstrap_arg_if_set "BUILDKITE_ARTIFACT_PATHS" "--artifact-upload-paths"
-add_bootstrap_arg_if_set "BUILDKITE_ARTIFACT_UPLOAD_DESTINATION" "--artifact-upload-destination"
-add_bootstrap_arg_if_set "BUILDKITE_BUILD_PATH" "--build-path"
-add_bootstrap_arg_if_set "BUILDKITE_HOOKS_PATH" "--hooks-path"
-add_bootstrap_arg_if_set "BUILDKITE_ADDITIONAL_HOOKS_PATHS" "--additional-hooks-paths"
-add_bootstrap_arg_if_set "BUILDKITE_PLUGINS_PATH" "--plugins-path"
+# add_bootstrap_arg_if_set "BUILDKITE_REPO" "--repository"
+# add_bootstrap_arg_if_set "BUILDKITE_COMMIT" "--commit"
+# add_bootstrap_arg_if_set "BUILDKITE_BRANCH" "--branch"
+# add_bootstrap_arg_if_set "BUILDKITE_TAG" "--tag"
+# add_bootstrap_arg_if_set "BUILDKITE_REFSPEC" "--refspec"
+# add_bootstrap_arg_if_set "BUILDKITE_PLUGINS" "--plugins"
+# add_bootstrap_arg_if_set "BUILDKITE_PULL_REQUEST" "--pullrequest"
+# add_bootstrap_arg_if_set "BUILDKITE_AGENT_NAME" "--agent"
+# add_bootstrap_arg_if_set "BUILDKITE_AGENT_META_DATA_QUEUE" "--queue"
+# add_bootstrap_arg_if_set "BUILDKITE_ORGANIZATION_SLUG" "--organization"
+# add_bootstrap_arg_if_set "BUILDKITE_PIPELINE_SLUG" "--pipeline"
+# add_bootstrap_arg_if_set "BUILDKITE_PIPELINE_PROVIDER" "--pipeline-provider"
+# add_bootstrap_arg_if_set "BUILDKITE_ARTIFACT_PATHS" "--artifact-upload-paths"
+# add_bootstrap_arg_if_set "BUILDKITE_ARTIFACT_UPLOAD_DESTINATION" "--artifact-upload-destination"
+# add_bootstrap_arg_if_set "BUILDKITE_BUILD_PATH" "--build-path"
+# add_bootstrap_arg_if_set "BUILDKITE_HOOKS_PATH" "--hooks-path"
+# add_bootstrap_arg_if_set "BUILDKITE_ADDITIONAL_HOOKS_PATHS" "--additional-hooks-paths"
+# add_bootstrap_arg_if_set "BUILDKITE_PLUGINS_PATH" "--plugins-path"
+
+if [[ -n "$(plugin_read_config MOUNT_HOST_PATH)" ]]; then
+  if [[ -n "$(plugin_read_config GUEST_BUILD_PATH)" ]]; then
+    bootstrap_args+=("--build-path" "$(expand_env_in_path "$(plugin_read_config GUEST_BUILD_PATH)")")
+  else
+    bootstrap_args+=("--build-path" "$(plugin_guest_path_for_host_directory_mount)")
+  fi
+else
+  bootstrap_args+=("--build-path" "build")
+fi
 
 # anka run has no --wait-time; when wait-time is enabled, sleep in the VM for sntp to sync
 if [[ -n "$wait_time_seconds" ]] && [[ "$wait_time_seconds" =~ ^(true|on|1)$ ]]; then
@@ -145,15 +155,24 @@ if [[ -z "$vm_agent_path" ]]; then
     exit 1
   fi
   echo "--- :anka: buildkite-agent not in VM; copying from host ($host_agent_path) to /usr/local/bin" >&2
-  # shellcheck disable=SC2086
+  # SC2016 off: $(whoami) expands inside the guest VM (single-quoted bash -c). SC2086 off: optional ANKA_DEBUG.
+  # shellcheck disable=SC2086,SC2016
   plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" bash -c 'set -x; if [ ! -d /usr/local/bin ]; then sudo mkdir -p /usr/local/bin && sudo chown "$(whoami)" /usr/local/bin; fi'
   # shellcheck disable=SC2086
   plugin_prompt_and_run anka $ANKA_DEBUG cp -a "$host_agent_path" "${job_image_name}:/usr/local/bin/"
 fi
 
+if [[ -n "$(plugin_read_config MOUNT_HOST_PATH)" ]]; then
+  echo "--- :anka: Showing mount points for ${job_image_name}"
+  # shellcheck disable=SC2086
+  plugin_prompt_and_run anka $ANKA_DEBUG mount ${job_image_name}
+fi
+
 echo "+++ Executing buildkite-agent bootstrap in $job_image_name"
 set +e
 # script -q forces a PTY so stdout is line-buffered; prevents command output appearing under wrong section (e.g. Uploading artifacts)
+echo "bootstrap_args: ${bootstrap_args[*]}" >&2
+# SC2086 off: ANKA_DEBUG is empty or --debug; quoting empty would pass a bogus argv to anka.
 # shellcheck disable=SC2086
 plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" script -q /dev/null buildkite-agent bootstrap "${bootstrap_args[@]:+${bootstrap_args[@]}}"
 bootstrap_exit_code=$?

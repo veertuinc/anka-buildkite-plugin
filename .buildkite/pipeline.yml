@@ -1,44 +1,74 @@
 steps:
   - label: "anka-testing"
     key: "anka-testing"
-    commands:
-      - env
-      - whoami
-      - hostname
-      - pwd
-      - ls -la
-      - mkdir -p /tmp/buildkite-cache
-      - touch /tmp/buildkite-cache/test1
+    commands: |
+      set -euo pipefail
+      set -x
+      anka_vm_mounted_host_share_path="/Volumes/My Shared Files/buildkite"
+      # Use $$ so Buildkite does not treat shell parameter expansions as pipeline interpolation at upload time.
+      required_file_relative_to_mount="$${ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT}"
+      if [[ -z "$${required_file_relative_to_mount}" ]]; then
+        echo "FATAL: ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT must be set and non-empty" >&2
+        exit 1
+      fi
+      required_file_path_inside_anka_vm="$${anka_vm_mounted_host_share_path}/$${required_file_relative_to_mount}"
+      if [[ ! -f "$${required_file_path_inside_anka_vm}" ]]; then
+        echo "FATAL: Mount verification failed: expected file is missing inside the Anka VM at $${required_file_path_inside_anka_vm}" >&2
+        echo "On the Buildkite host, ensure this file exists under $${BUILDKITE_BUILD_PATH}/$${required_file_relative_to_mount} (same content is shared into the guest)." >&2
+        exit 1
+      fi
+      # Optional: only some Anka / host setups write this; the Buildkite plugin does not create it.
+      if [[ -f /var/log/anka-mount.log ]]; then
+        cat /var/log/anka-mount.log
+      else
+        echo "No /var/log/anka-mount.log (optional; not present on this VM)." >&2
+      fi
+      env
+      whoami
+      hostname
+      pwd
+      ls -la
+      df -h
+      ls -laht "/Volumes/My Shared Files/buildkite/"
+      # - mkdir -p /tmp/buildkite-cache
+      # - touch /tmp/buildkite-cache/test1
     # agents:
     #   queue: mac-anka
+    env:
+      # Sentinel filename under the shared host directory (see mount-host-path). Do not set BUILDKITE_BUILD_PATH in env — it is reserved.
+      ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT: ".anka-mount-verification"
     plugins:
-      - veertuinc/anka#v2.0.0:
-          vm-name: 26.3-arm64
-          copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
-          copy-in-vm-path: "/tmp/buildkite-cache"
-          copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
-          copy-out-vm-path: "/tmp/buildkite-cache"
+      - veertuinc/anka#mounting:
+          vm-name: 26.4.1-arm64
+          # Touch a file under the host dir that mount-host-path shares (agent-provided BUILDKITE_BUILD_PATH is fine to read in hooks; only *overriding* it in step env is ignored).
+          pre-commands:
+            - 'mkdir -p "$${BUILDKITE_BUILD_PATH}" && touch "$${BUILDKITE_BUILD_PATH}/$${ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT}"'
+          # copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
+          # copy-in-vm-path: "/tmp/buildkite-cache"
+          # copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
+          # copy-out-vm-path: "/tmp/buildkite-cache"
           debug: true
           anka-debug: true
+          mount-host-path: "${BUILDKITE_BUILD_PATH}"
 
-  - label: "anka-testing2"
-    key: "anka-testing2"
-    depends_on:
-      - "anka-testing"
-    commands: |
-      env;
-      whoami;
-      hostname;
-      pwd;
-      ls -la;
-      [[ -f /tmp/buildkite-cache/test1 ]] && echo "test1 exists" || echo "test1 does not exist";
-      touch /tmp/buildkite-cache/test2;
-    plugins:
-      - veertuinc/anka#v2.0.0:
-          vm-name: 26.3-arm64
-          copy-in-vm-path: "/tmp/buildkite-cache"
-          copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/anka-testing"
-          copy-out-vm-path: "/tmp/buildkite-cache"
-          copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
-          debug: true
-          anka-debug: true
+  # - label: "anka-testing2"
+  #   key: "anka-testing2"
+  #   depends_on:
+  #     - "anka-testing"
+  #   commands: |
+  #     env;
+  #     whoami;
+  #     hostname;
+  #     pwd;
+  #     ls -la;
+  #     [[ -f /tmp/buildkite-cache/test1 ]] && echo "test1 exists" || echo "test1 does not exist";
+  #     touch /tmp/buildkite-cache/test2;
+  #   plugins:
+  #     - veertuinc/anka#v2.0.0:
+  #         vm-name: 26.3-arm64
+  #         copy-in-vm-path: "/tmp/buildkite-cache"
+  #         copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/anka-testing"
+  #         copy-out-vm-path: "/tmp/buildkite-cache"
+  #         copy-out-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
+  #         debug: true
+  #         anka-debug: true
