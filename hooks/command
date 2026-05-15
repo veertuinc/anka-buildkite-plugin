@@ -155,7 +155,8 @@ if [[ -z "$vm_agent_path" ]]; then
     exit 1
   fi
   echo "--- :anka: buildkite-agent not in VM; copying from host ($host_agent_path) to /usr/local/bin" >&2
-  # shellcheck disable=SC2086
+  # SC2016 off: $(whoami) expands inside the guest VM (single-quoted bash -c). SC2086 off: optional ANKA_DEBUG.
+  # shellcheck disable=SC2086,SC2016
   plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" bash -c 'set -x; if [ ! -d /usr/local/bin ]; then sudo mkdir -p /usr/local/bin && sudo chown "$(whoami)" /usr/local/bin; fi'
   # shellcheck disable=SC2086
   plugin_prompt_and_run anka $ANKA_DEBUG cp -a "$host_agent_path" "${job_image_name}:/usr/local/bin/"
@@ -170,8 +171,9 @@ fi
 echo "+++ Executing buildkite-agent bootstrap in $job_image_name"
 set +e
 # script -q forces a PTY so stdout is line-buffered; prevents command output appearing under wrong section (e.g. Uploading artifacts)
-# shellcheck disable=SC2086
 echo "bootstrap_args: ${bootstrap_args[*]}" >&2
+# SC2086 off: ANKA_DEBUG is empty or --debug; quoting empty would pass a bogus argv to anka.
+# shellcheck disable=SC2086
 plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" script -q /dev/null buildkite-agent bootstrap "${bootstrap_args[@]:+${bootstrap_args[@]}}"
 bootstrap_exit_code=$?
 set -e
