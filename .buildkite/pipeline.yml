@@ -5,11 +5,16 @@ steps:
       set -euo pipefail
       set -x
       anka_vm_mounted_host_share_path="/Volumes/My Shared Files/buildkite"
-      required_file_relative_to_mount="${ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT:?ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT must be set}"
-      required_file_path_inside_anka_vm="${anka_vm_mounted_host_share_path}/${required_file_relative_to_mount}"
-      if [[ ! -f "${required_file_path_inside_anka_vm}" ]]; then
-        echo "FATAL: Mount verification failed: expected file is missing inside the Anka VM at ${required_file_path_inside_anka_vm}" >&2
-        echo "On the Buildkite host, ensure this file exists under ${BUILDKITE_BUILD_PATH}/${required_file_relative_to_mount} (same content is shared into the guest)." >&2
+      # Use $$ so Buildkite does not treat ${...} as pipeline interpolation at upload time (see buildkite-agent pipeline upload).
+      required_file_relative_to_mount="$${ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT}"
+      if [[ -z "$${required_file_relative_to_mount}" ]]; then
+        echo "FATAL: ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT must be set and non-empty" >&2
+        exit 1
+      fi
+      required_file_path_inside_anka_vm="$${anka_vm_mounted_host_share_path}/$${required_file_relative_to_mount}"
+      if [[ ! -f "$${required_file_path_inside_anka_vm}" ]]; then
+        echo "FATAL: Mount verification failed: expected file is missing inside the Anka VM at $${required_file_path_inside_anka_vm}" >&2
+        echo "On the Buildkite host, ensure this file exists under $${BUILDKITE_BUILD_PATH}/$${required_file_relative_to_mount} (same content is shared into the guest)." >&2
         exit 1
       fi
       cat /var/log/anka-mount.log
