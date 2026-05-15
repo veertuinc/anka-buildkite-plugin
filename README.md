@@ -20,7 +20,7 @@ steps:
     key: "build-key"
     command: make build
     plugins:
-      - veertuinc/anka#main:
+      - veertuinc/anka#v2.1.0:
           vm-name: 26.3-arm64
           # Mounts the agent’s builds root into the VM (see “Host directory mounts” below).
           mount-host-path: "${BUILDKITE_BUILD_PATH}"
@@ -31,7 +31,7 @@ steps:
     depends_on:
       - "build-key"
     plugins:
-      - veertuinc/anka#main:
+      - veertuinc/anka#v2.1.0:
           vm-name: 26.3-arm64
           # Repeat mount-host-path on every step that runs inside the VM; clones are per job.
           mount-host-path: "${BUILDKITE_BUILD_PATH}"
@@ -64,7 +64,7 @@ Hook | Description
 | `mount-host-path` | Share a host directory into the VM ([Anka 3.9.0+](https://docs.veertu.com/anka/whats-new/anka-3.9.0/#ability-to-mount-host-directories-inside-of-the-vm); Apple silicon hosts only). The plugin runs `anka modify … mount host_path[:guest_folder_name]` in **post-checkout**; the guest sees the share under `/Volumes/My Shared Files/<mount-guest-folder-name>`. Paths may include `${BUILDKITE_*}` placeholders; the plugin expands these from the job environment. | `"${BUILDKITE_BUILD_PATH}"` or `"/tmp/buildkite-cache"` |
 | `mount-guest-folder-name` | Guest folder name under `/Volumes/My Shared Files/` (CLI `guest_folder_name`; default `buildkite`). | `buildkite` |
 | `guest-build-path` | Overrides `buildkite-agent bootstrap --build-path` when using `mount-host-path`. Defaults to `/Volumes/My Shared Files/<mount-guest-folder-name>`. | `/Volumes/My Shared Files/buildkite` |
-| `bootstrap-skip-checkout` | Passes [`buildkite-agent bootstrap --skip-checkout`](https://buildkite.com/docs/agent/cli/reference/bootstrap) inside the VM so bootstrap skips the git checkout phase there. Same effect as setting job env `BUILDKITE_SKIP_CHECKOUT=true` (also respected). Useful when the workspace is already valid inside the guest (e.g. shared host build dir). | `true` |
+| `bootstrap-args` | Extra arguments appended to [`buildkite-agent bootstrap`](https://buildkite.com/docs/agent/cli/reference/bootstrap) inside the VM (space-separated tokens). Supports `${BUILDKITE_*}` expansion like other path options. Example: `--skip-checkout` when using a shared host build directory. Values containing spaces are not split safely; prefer flags like `--flag=value`. | `--skip-checkout` or `--log-level debug` |
 | `copy-in-host-path` | Host path to copy into the VM before bootstrap. Use `:step_key:` and `:agent_id:` placeholders. Copy-in is skipped if the path does not exist. Must be used with `copy-in-vm-path`. | `"/tmp/buildkite-cache/:agent_id:/:step_key:"` |
 | `copy-in-vm-path` | Destination path in the VM for `copy-in-host-path`. Must be used with `copy-in-host-path`. | `/tmp/buildkite-cache` |
 | `copy-out-vm-path` | VM path to copy back to the host after bootstrap. Must be used with `copy-out-host-path`. | `/tmp/buildkite-cache` |

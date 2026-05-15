@@ -49,8 +49,8 @@ configuration:
       type: integer
     modify-mac:
       type: string
-    bootstrap-skip-checkout:
-      type: boolean
+    bootstrap-args:
+      type: string
   required:
     - vm-name
 additionalProperties: false

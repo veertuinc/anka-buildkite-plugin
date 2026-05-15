@@ -85,13 +85,6 @@ fi
 
 bootstrap_args=("--job" "$BUILDKITE_JOB_ID" "--phases" "checkout,command")
 
-# Align VM bootstrap with https://buildkite.com/docs/agent/cli/reference/bootstrap (--skip-checkout / BUILDKITE_SKIP_CHECKOUT).
-plugin_bootstrap_skip_checkout="$(plugin_read_config BOOTSTRAP_SKIP_CHECKOUT "")"
-if [[ "${BUILDKITE_SKIP_CHECKOUT:-}" =~ ^(true|1|yes|on)$ ]] ||
-  [[ "${plugin_bootstrap_skip_checkout}" =~ ^(true|1|yes|on)$ ]]; then
-  bootstrap_args+=("--skip-checkout")
-fi
-
 add_bootstrap_arg_if_set() {
   local environment_variable_name="$1"
   local bootstrap_flag="$2"
@@ -129,6 +122,12 @@ if [[ -n "$(plugin_read_config MOUNT_HOST_PATH)" ]]; then
   fi
 else
   bootstrap_args+=("--build-path" "build")
+fi
+
+plugin_bootstrap_extra_arguments="$(expand_env_in_path "$(plugin_read_config BOOTSTRAP_ARGS "")")"
+if [[ -n "$plugin_bootstrap_extra_arguments" ]]; then
+  read -r -a bootstrap_arguments_tokenized_from_plugin_config <<<"$plugin_bootstrap_extra_arguments"
+  bootstrap_args+=("${bootstrap_arguments_tokenized_from_plugin_config[@]}")
 fi
 
 # anka run has no --wait-time; when wait-time is enabled, sleep in the VM for sntp to sync
