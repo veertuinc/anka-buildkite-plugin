@@ -1,0 +1,20 @@
+name: Plugin tests
+
+on:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Plugin linter
+        run: make lint
+
+      - name: Bats tests
+        run: make bats
+
+      - name: Shellcheck
+        run: make shellcheck
