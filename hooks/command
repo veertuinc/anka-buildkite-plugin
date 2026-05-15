@@ -114,8 +114,12 @@ add_bootstrap_arg_if_set "BUILDKITE_COMMAND" "--command"
 # add_bootstrap_arg_if_set "BUILDKITE_ADDITIONAL_HOOKS_PATHS" "--additional-hooks-paths"
 # add_bootstrap_arg_if_set "BUILDKITE_PLUGINS_PATH" "--plugins-path"
 
-if [[ -n "$(plugin_read_config MOUNT_HOST_PATH)" && -n "$(plugin_read_config GUEST_BUILD_PATH)" ]]; then
-  bootstrap_args+=("--build-path" "$(plugin_read_config GUEST_BUILD_PATH)")
+if [[ -n "$(plugin_read_config MOUNT_HOST_PATH)" ]]; then
+  if [[ -n "$(plugin_read_config GUEST_BUILD_PATH)" ]]; then
+    bootstrap_args+=("--build-path" "$(expand_env_in_path "$(plugin_read_config GUEST_BUILD_PATH)")")
+  else
+    bootstrap_args+=("--build-path" "$(plugin_guest_path_for_host_directory_mount)")
+  fi
 else
   bootstrap_args+=("--build-path" "build")
 fi
@@ -167,7 +171,7 @@ echo "+++ Executing buildkite-agent bootstrap in $job_image_name"
 set +e
 # script -q forces a PTY so stdout is line-buffered; prevents command output appearing under wrong section (e.g. Uploading artifacts)
 # shellcheck disable=SC2086
-echo "bootstrap_args: ${bootstrap_args[@]:+${bootstrap_args[@]}}" >&2
+echo "bootstrap_args: ${bootstrap_args[*]}" >&2
 plugin_prompt_and_run anka $ANKA_DEBUG run "${run_args[@]:+${run_args[@]}}" script -q /dev/null buildkite-agent bootstrap "${bootstrap_args[@]:+${bootstrap_args[@]}}"
 bootstrap_exit_code=$?
 set -e

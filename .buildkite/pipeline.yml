@@ -10,7 +10,7 @@ steps:
       pwd
       ls -la
       df -h
-      ls -laht "/Volumes/buildkite/"
+      ls -laht "/Volumes/My Shared Files/buildkite/"
       # - mkdir -p /tmp/buildkite-cache
       # - touch /tmp/buildkite-cache/test1
     # agents:

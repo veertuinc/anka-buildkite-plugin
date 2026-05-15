@@ -1,5 +1,92 @@
 #!/bin/bash
 
+# Guest-visible root for host directory shares (Apple-enforced; Anka 3.9.0+). See:
+# https://docs.veertu.com/anka/whats-new/anka-3.9.0/#ability-to-mount-host-directories-inside-of-the-vm
+readonly ANKA_VM_HOST_DIRECTORY_SHARE_ROOT="/Volumes/My Shared Files"
+readonly ANKA_VM_HOST_DIRECTORY_MOUNT_MINIMUM_CLI_VERSION="3.9.0"
+
+# Returns 0 when dotted semver $1 is >= dotted semver $2 (numeric comparison per segment).
+function anka_semver_is_at_least() {
+  local actual_version="$1"
+  local required_version="$2"
+  local -a actual_segments required_segments
+  local actual_major actual_minor actual_patch required_major required_minor required_patch
+  IFS='.' read -ra actual_segments <<<"$actual_version"
+  IFS='.' read -ra required_segments <<<"$required_version"
+  actual_major="${actual_segments[0]:-0}"
+  actual_minor="${actual_segments[1]:-0}"
+  actual_patch="${actual_segments[2]:-0}"
+  required_major="${required_segments[0]:-0}"
+  required_minor="${required_segments[1]:-0}"
+  required_patch="${required_segments[2]:-0}"
+  ((actual_major > required_major)) && return 0
+  ((actual_major < required_major)) && return 1
+  ((actual_minor > required_minor)) && return 0
+  ((actual_minor < required_minor)) && return 1
+  ((actual_patch >= required_patch))
+}
+
+# Prints X.Y.Z or X.Y parsed from `anka version`, preferring full three-part semver lines.
+function anka_cli_semver_from_version_command() {
+  local version_output extracted_three extracted_two
+  version_output="$(anka version 2>/dev/null || true)"
+  extracted_three="$(printf '%s\n' "$version_output" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)"
+  if [[ -n "$extracted_three" ]]; then
+    printf '%s' "$extracted_three"
+    return 0
+  fi
+  extracted_two="$(printf '%s\n' "$version_output" | grep -oE '[0-9]+\.[0-9]+' | head -n1)"
+  if [[ -n "$extracted_two" ]]; then
+    printf '%s' "$extracted_two"
+    return 0
+  fi
+  printf ''
+}
+
+# Normalizes two-component semver to three-component (e.g. 3.9 -> 3.9.0).
+function anka_semver_normalize_patch_level() {
+  local version="$1"
+  if [[ "$version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+    printf '%s.0' "$version"
+  else
+    printf '%s' "$version"
+  fi
+}
+
+# Validates optional guest folder name for `anka modify … mount host_path[:guest_folder_name]`.
+function plugin_mount_guest_folder_name() {
+  local guest_folder_name
+  guest_folder_name="$(plugin_read_config MOUNT_GUEST_FOLDER_NAME buildkite)"
+  if [[ -z "$guest_folder_name" ]]; then
+    echo "ERROR: mount-guest-folder-name cannot be empty." >&2
+    exit 1
+  fi
+  if [[ "$guest_folder_name" == *"/"* ]]; then
+    echo "ERROR: mount-guest-folder-name must not contain '/'." >&2
+    exit 1
+  fi
+  printf '%s' "$guest_folder_name"
+}
+
+# Absolute guest path where the shared host folder appears (…/My Shared Files/<name>).
+function plugin_guest_path_for_host_directory_mount() {
+  printf '%s/%s' "$ANKA_VM_HOST_DIRECTORY_SHARE_ROOT" "$(plugin_mount_guest_folder_name)"
+}
+
+function plugin_assert_anka_cli_supports_host_directory_mounts() {
+  local parsed_version normalized_version
+  parsed_version="$(anka_cli_semver_from_version_command)"
+  normalized_version="$(anka_semver_normalize_patch_level "${parsed_version:-}")"
+  if [[ -z "$normalized_version" ]]; then
+    echo "ERROR: Could not determine Anka CLI version from 'anka version'. Host directory mounts require Anka Virtualization ${ANKA_VM_HOST_DIRECTORY_MOUNT_MINIMUM_CLI_VERSION}+." >&2
+    exit 1
+  fi
+  if ! anka_semver_is_at_least "$normalized_version" "$ANKA_VM_HOST_DIRECTORY_MOUNT_MINIMUM_CLI_VERSION"; then
+    echo "ERROR: Host directory mounts require Anka CLI (Virtualization package) ${ANKA_VM_HOST_DIRECTORY_MOUNT_MINIMUM_CLI_VERSION} or newer (found ${normalized_version}). See https://docs.veertu.com/anka/whats-new/anka-3.9.0/#ability-to-mount-host-directories-inside-of-the-vm" >&2
+    exit 1
+  fi
+}
+
 # Shows the command being run, and runs it
 function plugin_prompt_and_run() {
   if [[ $(plugin_read_config DEBUG "false") =~ (true|on|1) ]] ; then
