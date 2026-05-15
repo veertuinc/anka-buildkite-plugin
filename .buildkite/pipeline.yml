@@ -30,13 +30,12 @@ steps:
     # agents:
     #   queue: mac-anka
     env:
-      BUILDKITE_BUILD_PATH: "/Volumes/buildkite/build1"
-      # Host: BUILDKITE_BUILD_PATH + ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT; guest: under /Volumes/My Shared Files/buildkite/
+      # Sentinel filename under the shared host directory (see mount-host-path). Do not set BUILDKITE_BUILD_PATH in env — it is reserved.
       ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT: ".anka-mount-verification"
     plugins:
       - veertuinc/anka#mounting:
           vm-name: 26.4.1-arm64
-          # Host-side sentinel so the guest mount check can prove the share is visible (mkdir is a no-op if the path exists).
+          # Touch a file under the host dir that mount-host-path shares (agent-provided BUILDKITE_BUILD_PATH is fine to read in hooks; only *overriding* it in step env is ignored).
           pre-commands:
             - 'mkdir -p "$${BUILDKITE_BUILD_PATH}" && touch "$${BUILDKITE_BUILD_PATH}/$${ANKA_MOUNT_REQUIRED_FILE_IN_MOUNT}"'
           # copy-in-host-path: "/tmp/buildkite-cache/:agent_id:/:step_key:"
