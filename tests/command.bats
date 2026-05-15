@@ -40,6 +40,40 @@ teardown() {
   assert_output --partial "ran bootstrap in anka"
 }
 
+@test "buildkite-agent bootstrap passes --skip-checkout when BUILDKITE_SKIP_CHECKOUT=true" {
+  export BUILDKITE_SKIP_CHECKOUT=true
+  RUN_SKIP_CHECKOUT="run -e * -e * -e * -e * -e * -e * -e * $JOB_IMAGE"
+
+  stub anka \
+    "$RUN_SKIP_CHECKOUT true : echo 'vm ok'" \
+    "$RUN_SKIP_CHECKOUT bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
+    "$RUN_SKIP_CHECKOUT script -q /dev/null buildkite-agent bootstrap --job UUID --phases checkout,command --skip-checkout --command * --build-path build : echo 'ran bootstrap in anka'"
+
+  run $PWD/hooks/command
+
+  assert_success
+  assert_output --partial "ran bootstrap in anka"
+
+  unset BUILDKITE_SKIP_CHECKOUT
+}
+
+@test "buildkite-agent bootstrap passes --skip-checkout when bootstrap-skip-checkout plugin config set" {
+  export BUILDKITE_PLUGIN_ANKA_BOOTSTRAP_SKIP_CHECKOUT=true
+  RUN_SKIP_CHECKOUT="run -e * -e * -e * -e * -e * -e * -e * $JOB_IMAGE"
+
+  stub anka \
+    "$RUN_SKIP_CHECKOUT true : echo 'vm ok'" \
+    "$RUN_SKIP_CHECKOUT bash -c 'command -v buildkite-agent' : echo '/usr/local/bin/buildkite-agent'" \
+    "$RUN_SKIP_CHECKOUT script -q /dev/null buildkite-agent bootstrap --job UUID --phases checkout,command --skip-checkout --command * --build-path build : echo 'ran bootstrap in anka'"
+
+  run $PWD/hooks/command
+
+  assert_success
+  assert_output --partial "ran bootstrap in anka"
+
+  unset BUILDKITE_PLUGIN_ANKA_BOOTSTRAP_SKIP_CHECKOUT
+}
+
 @test "Run script -q /dev/null buildkite-agent bootstrap with inherited env vars" {
   export BUILDKITE_PLUGIN_ANKA_INHERIT_ENVIRONMENT_VARS="true"
   RUN_INHERIT="run -e * -e * -e * -e * -e * -e * -e * $JOB_IMAGE"

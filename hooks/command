@@ -85,6 +85,13 @@ fi
 
 bootstrap_args=("--job" "$BUILDKITE_JOB_ID" "--phases" "checkout,command")
 
+# Align VM bootstrap with https://buildkite.com/docs/agent/cli/reference/bootstrap (--skip-checkout / BUILDKITE_SKIP_CHECKOUT).
+plugin_bootstrap_skip_checkout="$(plugin_read_config BOOTSTRAP_SKIP_CHECKOUT "")"
+if [[ "${BUILDKITE_SKIP_CHECKOUT:-}" =~ ^(true|1|yes|on)$ ]] ||
+  [[ "${plugin_bootstrap_skip_checkout}" =~ ^(true|1|yes|on)$ ]]; then
+  bootstrap_args+=("--skip-checkout")
+fi
+
 add_bootstrap_arg_if_set() {
   local environment_variable_name="$1"
   local bootstrap_flag="$2"
