@@ -50,6 +50,7 @@ steps:
           debug: true
           anka-debug: true
           mount-host-path: "${BUILDKITE_BUILD_PATH}"
+          bootstrap-args: "--skip-checkout"
 
   # - label: "anka-testing2"
   #   key: "anka-testing2"
